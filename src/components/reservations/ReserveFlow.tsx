@@ -109,6 +109,7 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
           maxDate={addDays(today, restaurant.bookingWindowDays)}
           maxPartySize={restaurant.maxPartySize}
           suggestedDates={suggested}
+          preferenceCapacity={availability?.preferenceCapacity}
         />
         <p className="mt-4 text-body-sm text-muted">
           {fmt(t.reserve.bigGroups, {
@@ -124,13 +125,16 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
         {availability && !availability.open && <ErrorAlert tone="info">{availability.message}</ErrorAlert>}
         {availability?.open && (
           <>
-            {availability.message && !time && <ErrorAlert tone="warning" className="mb-4">{availability.message}</ErrorAlert>}
+            {availability.message && (!time || availability.slots.length === 0) && (
+              <ErrorAlert tone="warning" className="mb-4">{availability.message}</ErrorAlert>
+            )}
             <SlotPicker slots={availability.slots} selected={time} onSelect={(t) => setParams({ time: t, table: undefined })} />
           </>
         )}
       </Step>
 
-      {time && (
+      {/* Hidden when no slot exists for these criteria (step 2 already explains why). */}
+      {time && availability?.slots.length !== 0 && (
         <Step n={3} title={t.reserve.step3}>
           {loading && availability?.time !== time ? (
             <div className="flex items-center gap-2 font-ui text-sm text-muted"><Spinner className="size-4" /> {t.reserve.searchingTables}</div>

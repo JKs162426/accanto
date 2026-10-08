@@ -67,6 +67,8 @@ export interface AvailabilityDTO {
   /** Present when a time was requested. */
   time?: string;
   tables?: PublicTableDTO[];
+  /** Largest party each seating preference can host ("" = any), occupancy ignored. */
+  preferenceCapacity?: Record<string, number>;
 }
 
 export interface ApiErrorBody {

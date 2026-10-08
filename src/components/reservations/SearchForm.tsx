@@ -4,6 +4,7 @@ import { SEATING_PREFERENCES } from "@/lib/constants";
 import { chipClasses } from "@/components/common/Button";
 import { formatDate } from "@/lib/helpers";
 import { useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/format";
 
 export interface SearchValues {
   date: string;
@@ -22,6 +23,7 @@ export default function SearchForm({
   maxDate,
   maxPartySize,
   suggestedDates,
+  preferenceCapacity,
 }: {
   values: SearchValues;
   onChange: (patch: Partial<SearchValues>) => void;
@@ -29,9 +31,11 @@ export default function SearchForm({
   maxDate: string;
   maxPartySize: number;
   suggestedDates: string[];
+  /** Largest party each preference can seat; flags options the group won't fit. */
+  preferenceCapacity?: Record<string, number>;
 }) {
   const { t, lang } = useI18n();
-  const chip = (active: boolean) => chipClasses(active);
+  const chip = (active: boolean, className?: string) => chipClasses(active, className);
 
   return (
     <div className="space-y-5">
@@ -89,17 +93,23 @@ export default function SearchForm({
         <fieldset>
           <legend className="mb-2 text-sm font-medium">{t.reserve.preference}</legend>
           <div className="flex flex-wrap gap-2">
-            {SEATING_PREFERENCES.map((p) => (
-              <button
-                key={p}
-                type="button"
-                className={chip(values.preference === p)}
-                aria-pressed={values.preference === p}
-                onClick={() => onChange({ preference: p })}
-              >
-                {t.enums.preference[p]}
-              </button>
-            ))}
+            {SEATING_PREFERENCES.map((p) => {
+              const max = preferenceCapacity?.[p];
+              const tooSmall = p !== "" && !!max && values.partySize > max;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  className={chip(values.preference === p, tooSmall ? "border-dashed opacity-60" : undefined)}
+                  aria-pressed={values.preference === p}
+                  title={tooSmall ? fmt(t.reserve.maxGuests, { n: max }) : undefined}
+                  onClick={() => onChange({ preference: p })}
+                >
+                  {t.enums.preference[p]}
+                  {tooSmall && <span className="ml-1 text-caption">· {fmt(t.reserve.maxGuests, { n: max })}</span>}
+                </button>
+              );
+            })}
           </div>
         </fieldset>
       </div>

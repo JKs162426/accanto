@@ -4,7 +4,7 @@
  * directly (tests/unit/scheduling.test.ts) and reused by the services.
  */
 import type { ShiftName, TableLocation, TableStatus, TableType } from "@/generated/prisma/enums";
-import type { SeatingPreference } from "./constants";
+import { SEATING_PREFERENCES, type SeatingPreference } from "./constants";
 import { addDays, dayOfWeek, minutesToTime, timeToMinutes, todayIn, zonedToUtc } from "./helpers";
 
 export interface OpeningHourLike {
@@ -144,6 +144,22 @@ export function matchesPreference(table: TableLike, preference?: SeatingPreferen
     default:
       return table.location === preference;
   }
+}
+
+/**
+ * Largest party each seating preference can host, from the active tables only
+ * (occupancy ignored). Lets the UI tell "VIP tables seat up to 2" apart from
+ * "VIP tables are booked". Preferences with no active table map to 0.
+ */
+export function maxCapacityByPreference(tables: TableLike[]): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const preference of SEATING_PREFERENCES) {
+    const matching = tables.filter(
+      (t) => t.status === "ACTIVE" && !t.deletedAt && matchesPreference(t, preference || null),
+    );
+    result[preference] = matching.reduce((max, t) => Math.max(max, t.capacity), 0);
+  }
+  return result;
 }
 
 /**

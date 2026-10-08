@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import {
   findAvailableTables,
+  maxCapacityByPreference,
   getDaySchedule,
   reservationInterval,
   type BusyInterval,
@@ -108,9 +109,17 @@ export async function getAvailability(query: {
   excludeReservationId?: string;
 }): Promise<AvailabilityResult> {
   const restaurant = await getRestaurant();
+  const tables = await db.table.findMany({
+    where: { restaurantId: restaurant.id, deletedAt: null },
+    orderBy: { number: "asc" },
+  });
+  // Seats per preference, so the UI can say "VIP: up to 2" instead of "full".
+  const preferenceCapacity = maxCapacityByPreference(tables);
+  const base = { date: query.date, preferenceCapacity };
+
   if (query.partySize > restaurant.maxPartySize) {
     return {
-      date: query.date,
+      ...base,
       open: false,
       slots: [],
       notice: {
@@ -121,24 +130,40 @@ export async function getAvailability(query: {
   }
   const schedule = scheduleFor(restaurant, query.date);
   if (!schedule.open) {
-    return { date: query.date, open: false, slots: [], notice: rejectionNotice(schedule) };
+    return { ...base, open: false, slots: [], notice: rejectionNotice(schedule) };
   }
   if (schedule.slots.length === 0) {
-    return { date: query.date, open: false, slots: [], notice: { code: "NO_SLOTS_LEFT_TODAY" } };
+    return { ...base, open: false, slots: [], notice: { code: "NO_SLOTS_LEFT_TODAY" } };
   }
+  // The party doesn't fit any table of the chosen kind (e.g. 4 guests, VIP
+  // tables seat 2): explain that instead of showing every slot as "full".
+  const preference = (query.preference as SeatingPreference | null) ?? null;
+  const maxForPreference = preferenceCapacity[preference ?? ""] ?? 0;
+  if (maxForPreference > 0 && query.partySize > maxForPreference) {
+    return {
+      ...base,
+      open: true,
+      slots: [],
+      ...(query.time ? { time: query.time, tables: [] } : {}),
+      notice: { code: "PREFERENCE_TOO_SMALL", params: { max: maxForPreference } },
+    };
+  }
+
   // One query for the whole service day, then count free tables per slot in memory.
   const config = toSchedulingConfig(restaurant);
-  const preference = (query.preference as SeatingPreference | null) ?? null;
   const intervals = schedule.slots.map((s) => ({ ...s, ...reservationInterval(query.date, s.time, config) }));
-  const [tables, busy] = await Promise.all([
-    db.table.findMany({ where: { restaurantId: restaurant.id, deletedAt: null }, orderBy: { number: "asc" } }),
-    getBusyIntervals(db, restaurant.id, intervals[0].startsAt, intervals[intervals.length - 1].endsAt, query.excludeReservationId),
-  ]);
+  const busy = await getBusyIntervals(
+    db,
+    restaurant.id,
+    intervals[0].startsAt,
+    intervals[intervals.length - 1].endsAt,
+    query.excludeReservationId,
+  );
   const freeAt = (i: (typeof intervals)[number]) =>
     findAvailableTables(tables, busy, { startsAt: i.startsAt, endsAt: i.endsAt, partySize: query.partySize, preference });
 
   const result: AvailabilityResult = {
-    date: query.date,
+    ...base,
     open: true,
     slots: intervals.map((i) => ({ time: i.time, shift: i.shift, free: freeAt(i).length })),
   };

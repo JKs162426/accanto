@@ -101,6 +101,17 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
     for (const t of availability.tables ?? []) expect(t).not.toHaveProperty("notes");
   });
 
+  it("explains that a party is too large for the preference instead of reporting it full", async () => {
+    const vip = await getAvailability({ date, partySize: 4, preference: "VIP" });
+    expect(vip.open).toBe(true);
+    expect(vip.slots).toEqual([]);
+    expect(vip.notice?.code).toBe("PREFERENCE_TOO_SMALL");
+    expect(vip.preferenceCapacity?.VIP).toBe(2);
+    const couple = await getAvailability({ date, partySize: 2, preference: "VIP" });
+    expect(couple.notice).toBeUndefined();
+    expect(couple.slots.some((s) => s.free > 0)).toBe(true);
+  });
+
   it("cancelling frees the table", async () => {
     const theirs = await db.reservation.findFirstOrThrow({ where: { id: { in: created }, clientId: other.id } });
     await cancelReservation(theirs.id, other);

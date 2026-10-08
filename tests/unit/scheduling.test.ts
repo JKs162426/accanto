@@ -4,6 +4,7 @@ import {
   generateSlots,
   getDaySchedule,
   intervalsOverlap,
+  maxCapacityByPreference,
   reservationInterval,
   type OpeningHourLike,
   type SchedulingConfig,
@@ -106,5 +107,16 @@ describe("findAvailableTables", () => {
     expect(pick("WINDOW")).toEqual(["t11"]);
     expect(pick("PRIVATE")).toEqual(["t9"]);
     expect(pick("VIP")).toEqual(["t11"]);
+  });
+
+  it("reports the largest party each preference can seat (active tables only)", () => {
+    const max = maxCapacityByPreference(tables);
+    expect(max[""]).toBe(8);
+    expect(max.VIP).toBe(2);
+    expect(max.WINDOW).toBe(2);
+    expect(max.TERRACE).toBe(4);
+    expect(max.PRIVATE).toBe(8);
+    // t2 (out of service) and t3 (deleted) don't count.
+    expect(maxCapacityByPreference(tables.filter((t) => t.id === "t2" || t.id === "t3"))[""]).toBe(0);
   });
 });
