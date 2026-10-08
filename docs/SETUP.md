@@ -73,11 +73,26 @@ npm test
 
 ## 6. Despliegue (Vercel)
 
-1. Crea la base de datos (Vercel Postgres/Neon o Supabase) y copia la URL con pooling.
-2. Configura las variables de entorno en Vercel: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL` (la URL de producción), `CRON_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM` y `ADMIN_NOTIFICATION_EMAIL`.
-3. `vercel.json` ya define el build (`npm run vercel-build`, que aplica las migraciones) y un cron diario.
-4. Para recordatorios cada 15 minutos, añade en GitHub los secretos `APP_URL` y `CRON_SECRET`; el workflow `.github/workflows/email-cron.yml` hace el resto.
-5. Datos demo (opcional, una vez): `DATABASE_URL=<prod> NODE_ENV=production SEED_FORCE=1 npm run db:seed`.
+1. **Proyecto:** `vercel link --yes --project accanto` crea el proyecto y lo conecta al repo de GitHub. A partir de ahí, cada push a `main` despliega en producción.
+2. **Base de datos (Neon, Fráncfort):**
+   ```bash
+   vercel integration add neon --plan free_v3 -m region=fra1 -m auth=false -e production --no-env-pull
+   ```
+   Así se crean `DATABASE_URL` (con pooler) y `DATABASE_URL_UNPOOLED` (directa, para migraciones). `--no-env-pull` evita que la CLI sobrescriba tu `.env.local`. Las funciones están fijadas en `fra1` en `vercel.json`, junto a la base de datos.
+3. **Variables:**
+   - Secretos: `AUTH_SECRET` y `CRON_SECRET`, con `--sensitive`.
+   - Email: `EMAIL_FROM`, `RESEND_API_KEY`, `ADMIN_NOTIFICATION_EMAIL` y `EMAIL_RECIPIENT_ALLOWLIST`.
+   - `APP_URL` es opcional: en Vercel se usa el dominio de producción del proyecto.
+4. **Migrar y sembrar (una vez, antes del primer build):** el build prerenderiza la landing y necesita los datos del restaurante.
+   ```bash
+   vercel env pull /ruta/fuera/del/repo/prod.env --environment=production
+   # exporta DATABASE_URL y DATABASE_URL_UNPOOLED de ese archivo, y luego:
+   npx prisma migrate deploy
+   NODE_ENV=production SEED_FORCE=1 SEED_ADMIN_PASSWORD=... SEED_CLIENT_PASSWORD=... npx tsx prisma/seed.ts
+   ```
+   En producción, el seed exige contraseñas propias: las de desarrollo son públicas, porque están en el repo.
+5. **Desplegar:** haz `git push` a `main`. El build (`npm run vercel-build`) aplica las migraciones pendientes antes de `next build`.
+6. **Recordatorios cada 15 min (opcional):** en Vercel Hobby los crons solo pueden ser diarios. Añade los secretos `APP_URL` y `CRON_SECRET` en GitHub para el workflow `.github/workflows/email-cron.yml`.
 
 ## Problemas habituales
 

@@ -3,6 +3,10 @@
  *
  * WARNING: wipes tables, reservations, notifications and emails before
  * inserting. Refuses to run with NODE_ENV=production unless SEED_FORCE=1.
+ *
+ * Passwords: development uses the documented demo passwords. In production
+ * they are public knowledge (this file is on GitHub), so SEED_ADMIN_PASSWORD
+ * and SEED_CLIENT_PASSWORD are required there.
  */
 import { config } from "dotenv";
 import bcrypt from "bcryptjs";
@@ -14,7 +18,8 @@ import { reservationInterval } from "../src/lib/scheduling";
 config({ path: ".env.local" });
 config();
 
-if (process.env.NODE_ENV === "production" && process.env.SEED_FORCE !== "1") {
+const isProduction = process.env.NODE_ENV === "production";
+if (isProduction && process.env.SEED_FORCE !== "1") {
   console.error("Refusing to seed in production. Set SEED_FORCE=1 if you really mean it.");
   process.exit(1);
 }
@@ -83,12 +88,18 @@ async function main() {
       create: { email, name, phone, role, password: await bcrypt.hash(password, 12), ...extra },
     });
 
-  const admin = await user("admin@accanto.local", "AdminPass123!", "Admin Accanto", "+39 333 000 0001", "ADMIN");
-  const client1 = await user("client1@accanto.local", "ClientPass123!", "Giulia Romano", "+39 333 111 2222", "CLIENT", {
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || (isProduction ? "" : "AdminPass123!");
+  const clientPassword = process.env.SEED_CLIENT_PASSWORD || (isProduction ? "" : "ClientPass123!");
+  if (adminPassword.length < 12 || clientPassword.length < 8) {
+    throw new Error("In production set SEED_ADMIN_PASSWORD (≥12 chars) and SEED_CLIENT_PASSWORD (≥8 chars).");
+  }
+
+  const admin = await user("admin@accanto.local", adminPassword, "Admin Accanto", "+39 333 000 0001", "ADMIN");
+  const client1 = await user("client1@accanto.local", clientPassword, "Giulia Romano", "+39 333 111 2222", "CLIENT", {
     adminNotes: "Preferisce il tavolo accanto alla finestra. Allergia alla frutta a guscio.",
     remind2h: true,
   });
-  const client2 = await user("client2@accanto.local", "ClientPass123!", "Marco Bianchi", "+39 333 333 4444", "CLIENT", {
+  const client2 = await user("client2@accanto.local", clientPassword, "Marco Bianchi", "+39 333 333 4444", "CLIENT", {
     adminNotes: "Prenota spesso per clienti di lavoro. Ama i rossi piemontesi.",
   });
 

@@ -83,6 +83,7 @@ El panel está en `/it/admin/login` (o `/en/admin/login`). El seed crea:
 | Variable                    | Obligatoria | Descripción                                                                |
 | --------------------------- | :---------: | -------------------------------------------------------------------------- |
 | `DATABASE_URL`              | ✅          | Cadena de conexión de PostgreSQL                                           |
+| `DATABASE_URL_UNPOOLED`     |             | Conexión directa para migraciones y seed (Neon/Vercel la crea sola)        |
 | `DATABASE_POOL_MAX`         |             | Conexiones por instancia (`1` con `prisma dev`; por defecto 5 en producción) |
 | `AUTH_SECRET`               | ✅          | Firma el JWT de sesión, ≥ 32 caracteres (`openssl rand -base64 32`)        |
 | `APP_URL`                   | ✅          | URL pública, usada en los enlaces de los emails                            |
@@ -131,11 +132,9 @@ En Vercel Hobby los crons solo pueden ejecutarse una vez al día, así que `verc
 
 ## Despliegue en Vercel
 
-1. Crea una base de datos PostgreSQL (Vercel Postgres/Neon o Supabase) y copia su URL.
-2. Importa el repositorio en Vercel y configura las variables de entorno de la tabla anterior. Para los emails, Resend es la opción más sencilla.
-3. El build usa `npm run vercel-build` (`prisma generate && prisma migrate deploy && next build`), así que las migraciones se aplican en cada despliegue.
-4. **Demo pública:** si publicas las credenciales (`DEMO_MODE=true`), cualquiera puede entrar como admin. Define `EMAIL_RECIPIENT_ALLOWLIST` (p. ej. `@accanto.local,tu@email.com`) para que nadie pueda usar tu dominio de envío para escribir a terceros.
-5. Opcional: siembra los datos demo una vez desde tu máquina con `DATABASE_URL=<prod> SEED_FORCE=1 NODE_ENV=production npm run db:seed`. Ojo: el seed borra las reservas existentes.
+Producción: Vercel con funciones en `fra1` y Postgres de Neon en Fráncfort, creado desde la integración de Vercel. Los pasos exactos (crear el proyecto, la base de datos, las variables y la siembra inicial) están en [docs/SETUP.md](docs/SETUP.md#6-despliegue-vercel). Después, cada push a `main` despliega y aplica las migraciones pendientes.
+
+**Demo pública o privada:** las credenciales demo solo se muestran con `DEMO_MODE=true`. En producción el seed exige contraseñas propias (`SEED_ADMIN_PASSWORD`, `SEED_CLIENT_PASSWORD`). Con envío real de emails, define `EMAIL_RECIPIENT_ALLOWLIST` para que nadie pueda usar tu dominio para escribir a terceros.
 
 ## Cómo extender
 

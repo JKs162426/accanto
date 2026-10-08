@@ -1,0 +1,3 @@
+# Never upload local env files or secrets from a CLI deploy.
+.env*
+!.env.example

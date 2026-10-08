@@ -31,7 +31,16 @@ type ReservationWithTable = Reservation & { table: Table };
 /** { field: { from, to } } for the fields guests care about. */
 export type ReservationChanges = Partial<Record<"date" | "time" | "partySize" | "table", { from: unknown; to: unknown }>>;
 
-const appUrl = () => (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+/**
+ * Public base URL for links in emails: APP_URL if set; on Vercel, the
+ * project's production domain (injected automatically); else localhost.
+ */
+const appUrl = () =>
+  (
+    process.env.APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
+    "http://localhost:3000"
+  ).replace(/\/$/, "");
 
 function adminRecipients(): string[] {
   return (process.env.ADMIN_NOTIFICATION_EMAIL || "")
