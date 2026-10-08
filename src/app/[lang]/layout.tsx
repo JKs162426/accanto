@@ -10,6 +10,13 @@ const cormorant = Cormorant_Garamond({ variable: "--font-cormorant", subsets: ["
 const crimson = Crimson_Text({ variable: "--font-crimson", subsets: ["latin"], weight: ["400", "600"], style: ["normal", "italic"] });
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
+/** Public origin: APP_URL, else the Vercel production domain, else localhost. */
+function siteUrl(): string {
+  if (process.env.APP_URL) return process.env.APP_URL;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return "http://localhost:3000";
+}
+
 /** Both languages are prerendered; the locale is a root param (`next/root-params`). */
 export async function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -18,11 +25,23 @@ export async function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const { t, lang } = await getI18n();
   return {
+    // Share previews (WhatsApp, iMessage, LinkedIn…) need absolute image URLs.
+    metadataBase: new URL(siteUrl()),
     title: { default: t.meta.title, template: t.meta.titleTemplate },
     description: t.meta.description,
-    icons: { icon: "/favicon.ico" },
-    alternates: { languages: Object.fromEntries(locales.map((l) => [l, `/${l}`])) },
-    openGraph: { locale: lang === "it" ? "it_IT" : "en_GB" },
+    alternates: { canonical: `/${lang}`, languages: Object.fromEntries(locales.map((l) => [l, `/${l}`])) },
+    // The images come from the opengraph-image / twitter-image files in this folder;
+    // icons from favicon.ico, icon.svg and apple-icon.png in src/app.
+    openGraph: {
+      type: "website",
+      siteName: "Accanto",
+      title: t.meta.title,
+      description: t.meta.description,
+      url: `/${lang}`,
+      locale: lang === "it" ? "it_IT" : "en_GB",
+      alternateLocale: lang === "it" ? ["en_GB"] : ["it_IT"],
+    },
+    twitter: { card: "summary_large_image", title: t.meta.title, description: t.meta.description },
   };
 }
 
