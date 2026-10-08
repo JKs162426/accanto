@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Crimson+Text&family=Inter:wght@500&display=swap" rel="stylesheet">
+<title>{{title}}</title>
+</head>
+<body style="margin:0;padding:0;background:#f0ebe3;font-family:'Crimson Text',Georgia,serif;color:#2c2c2c;">
+<!-- Layout only: every piece of copy is a {{variable}} filled from the i18n dictionary
+     in the reservation's language (src/services/emailService.ts). {{x}} is HTML-escaped;
+     {{#x}}…{{/x}} renders only when x is set. Rendered by src/lib/email.ts. -->
+<span style="display:none!important;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">{{preheader}}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0ebe3;padding:32px 12px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffaf0;border-radius:12px;overflow:hidden;border:1px solid #e8dcc8;">
+  <tr><td style="background:#1b4965;padding:28px 32px;text-align:center;border-bottom:3px solid #d4a574;">
+    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:32px;font-weight:600;letter-spacing:6px;color:#fffaf0;">ACCANTO</div>
+    <div style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:3px;color:#e0bb8e;margin-top:6px;text-transform:uppercase;">{{tagline}}</div>
+  </td></tr>
+  <tr><td style="padding:32px;">
+    <h1 style="margin:0 0 12px;font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:600;color:#1b4965;">{{title}}</h1>
+    <p style="margin:0 0 12px;font-size:17px;line-height:26px;">{{intro}}</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0ebe3;border:1px solid #e8dcc8;border-left:3px solid #d4a574;border-radius:8px;margin:20px 0;">
+      <tr><td style="padding:18px 20px;font-size:16px;line-height:25px;">
+        <div style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2px;color:#6f6a64;text-transform:uppercase;">{{labelCode}}</div>
+        <div style="font-family:'Courier New',monospace;font-size:22px;font-weight:bold;color:#a8350f;letter-spacing:2px;margin-bottom:12px;">{{code}}</div>
+        <strong>{{labelDate}}:</strong> {{dateLabel}}<br>
+        <strong>{{labelTime}}:</strong> {{time}}<br>
+        <strong>{{labelPeople}}:</strong> {{partySize}}<br>
+        <strong>{{labelTable}}:</strong> {{tableLabel}}
+        {{#notes}}<br><strong>{{labelNotes}}:</strong> {{notes}}{{/notes}}
+      </td></tr>
+    </table>
+    <p style="margin:0 0 12px;font-size:17px;line-height:26px;">{{outro}}</p>
+  </td></tr>
+  <tr><td style="padding:0 32px 32px;text-align:center;">
+    <a href="{{bookUrl}}" style="display:inline-block;margin:4px;padding:12px 22px;border-radius:6px;font-family:Inter,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;background:#c93e12;color:#fffaf0;">{{btnBookAgain}}</a>
+  </td></tr>
+  <tr><td style="padding:24px 32px;background:#f0ebe3;border-top:1px solid #e8dcc8;font-family:Inter,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#6f6a64;text-align:center;">
+    <strong style="color:#1b4965;">{{restaurantName}}</strong><br>
+    {{restaurantAddress}}<br>
+    {{#restaurantPhone}}{{labelPhone}} {{restaurantPhone}} · {{/restaurantPhone}}{{restaurantEmail}}
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

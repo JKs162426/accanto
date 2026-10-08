@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Accanto · Sistema de reservas
 
-## Getting Started
+Sistema de reservas para Accanto, un restaurante italiano en **Turín**. Es bilingüe: **italiano** como idioma principal e **inglés** como alternativa, intercambiables desde el header. Los clientes buscan disponibilidad en tiempo real, reservan mesa y gestionan sus reservas; el equipo administra mesas, horarios, reservas, clientes y reportes desde un panel propio. Incluye notificaciones por email con cola y recordatorios automáticos.
 
-First, run the development server:
+**Stack:** Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · PostgreSQL + Prisma 7 · Zod · Tailwind CSS 4 · SWR · Vitest.
+
+## Inicio rápido
+
+Requisitos: Node.js ≥ 20.9.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install                 # también genera el cliente de Prisma
+npm run db:start            # Postgres local sin Docker (prisma dev); copia la URL que imprime
+cp .env.example .env.local  # rellena DATABASE_URL, AUTH_SECRET y CRON_SECRET
+npm run db:migrate          # aplica las migraciones
+npm run db:seed             # carga los datos de prueba
+npm run dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Con `prisma dev`, pon `DATABASE_POOL_MAX="1"` en `.env.local` (esa base de datos local solo acepta una sesión). Si prefieres tu propio PostgreSQL, usa su URL y omite `db:start`. Hay más detalle en [docs/SETUP.md](docs/SETUP.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Credenciales de prueba
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Rol     | Email                   | Contraseña       |
+| ------- | ----------------------- | ---------------- |
+| Admin   | `admin@accanto.local`   | `AdminPass123!`  |
+| Cliente | `client1@accanto.local` | `ClientPass123!` |
+| Cliente | `client2@accanto.local` | `ClientPass123!` |
 
-## Learn More
+El panel está en `/it/admin/login` (o `/en/admin/login`). El seed crea:
 
-To learn more about Next.js, take a look at the following resources:
+- **Horario:** de jueves a domingo, almuerzo de 12:00 a 15:00 y cena de 18:00 a 23:00. De lunes a miércoles está cerrado.
+- **Duración de cada reserva:** 2 h.
+- **12 mesas:**
+  - 1–4: interior, 4 plazas.
+  - 5–8: terraza, 4 plazas.
+  - 9–10: sala privada, 8 plazas.
+  - 11–12: VIP junto a la ventana, 2 plazas.
+- **16 reservas:** 9 en las próximas semanas y 7 en las dos últimas, con estados presente, no-show y cancelada.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Idiomas (IT / EN)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Rutas:** todas las páginas viven bajo `/it/...` y `/en/...`. La raíz `/` redirige al último idioma elegido (cookie `NEXT_LOCALE`) o, si no hay, a italiano. El selector IT | EN del header (y del sidebar del panel) cambia de idioma sin salir de la página.
+- **Textos:** están en `src/i18n/dictionaries/it.ts` (fuente de verdad) y `en.ts`. El inglés está tipado contra el italiano, así que si falta una traducción TypeScript lo marca, y un test comprueba además que no haya claves vacías.
+- **API:** los errores llegan traducidos al idioma de la página. El navegador envía `x-locale`, y los servicios lanzan códigos (`TABLE_TAKEN`…) que se traducen en el borde de la API. Las validaciones Zod usan claves (`invalidEmail`), así que el mismo schema sirve para los dos idiomas.
+- **Emails:** el cliente los recibe en el idioma en que reservó (`Reservation.locale`). Los avisos al staff van en `ADMIN_EMAIL_LOCALE` (italiano por defecto). Las plantillas HTML solo tienen la estructura; todo el texto sale de los diccionarios.
+- **Formatos:** fechas, moneda y porcentajes con `Intl`, en `it-IT` / `en-GB`. La zona horaria del restaurante es `Europe/Rome`.
 
-## Deploy on Vercel
+## Funcionalidades
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Cliente**
+- Búsqueda por fecha, número de personas y preferencia (interior, terraza, ventana, privada o VIP). Cada franja horaria indica cuántas mesas quedan libres, y la lista se refresca cada 30 s.
+- Reserva en cuatro pasos. La selección vive en la URL, así que sobrevive al login o registro.
+- Al confirmar se genera un código único (`ACC-XXXXXX`) y se envía un email de confirmación.
+- "Mis reservas" (próximas y pasadas): permite modificar fecha, hora o personas (si la mesa deja de estar libre, se reasigna otra) y cancelar con actualización optimista.
+- Perfil con datos personales, preferencias de recordatorio (24 h / 2 h), cambio de contraseña e historial.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Administración**
+- Dashboard con reservas de hoy, la semana y el mes, ocupación en tiempo real, gráficos por hora y por día, estado de cada mesa y notificaciones de nuevas reservas.
+- Reservas en lista con búsqueda (código, cliente, email, teléfono), filtros y paginación, o en agenda del día (mesas × horas). Permite crear reservas manuales, cambiar mesa, hora o personas, marcar presente o no-show, añadir notas internas, cancelar y consultar el historial de cambios.
+- Mesas: alta, edición y baja (se archivan si tienen historial), marcado como fuera de servicio y estado en vivo.
+- Clientes: listado con búsqueda, ficha con estadísticas, historial y notas privadas.
+- Ajustes: datos del restaurante, horario semanal por turnos, días cerrados, duración de la reserva, intervalo entre horarios y antelación máxima.
+- Reportes: ocupación, ingresos estimados, clientes frecuentes, cancelaciones y no-shows, y exportación a CSV.
+
+**Emails:** confirmación, modificación, cancelación (al cliente y al admin), aviso de nueva reserva al admin y recordatorios a 24 h y 2 h. Ver [Emails](#emails).
+
+## Scripts
+
+| Script                                   | Qué hace                                                      |
+| ---------------------------------------- | ------------------------------------------------------------- |
+| `npm run dev` / `build` / `start`        | Next.js                                                       |
+| `npm test`                               | Vitest: tests unitarios + integración contra la BD si hay `DATABASE_URL` |
+| `npm run lint` / `typecheck` / `format`  | ESLint / TypeScript / Prettier                                |
+| `npm run db:start` / `db:stop`           | Postgres local con `prisma dev`                               |
+| `npm run db:migrate`                     | Crea o aplica migraciones y regenera el cliente               |
+| `npm run db:seed`                        | Recarga los fixtures (**borra** reservas y mesas)             |
+| `npm run db:reset`                       | Resetea la BD y vuelve a sembrar                              |
+| `npm run db:studio`                      | Prisma Studio                                                 |
+
+## Variables de entorno
+
+| Variable                    | Obligatoria | Descripción                                                                |
+| --------------------------- | :---------: | -------------------------------------------------------------------------- |
+| `DATABASE_URL`              | ✅          | Cadena de conexión de PostgreSQL                                           |
+| `DATABASE_POOL_MAX`         |             | Conexiones por instancia (`1` con `prisma dev`; por defecto 5 en producción) |
+| `AUTH_SECRET`               | ✅          | Firma el JWT de sesión, ≥ 32 caracteres (`openssl rand -base64 32`)        |
+| `APP_URL`                   | ✅          | URL pública, usada en los enlaces de los emails                            |
+| `CRON_SECRET`               | ✅          | Token Bearer de `GET /api/emails` (recordatorios y cola)                   |
+| `RESEND_API_KEY`            |             | Si existe, los emails salen por [Resend](https://resend.com)               |
+| `EMAIL_HOST` … `EMAIL_PASSWORD` |         | SMTP con Nodemailer (si no hay Resend)                                     |
+| `EMAIL_FROM`                |             | Remitente, p. ej. `Accanto <reservas@tudominio.com>`                       |
+| `ADMIN_NOTIFICATION_EMAIL`  |             | Destinatarios de los avisos al admin (separados por comas)                 |
+| `ADMIN_EMAIL_LOCALE`        |             | Idioma de los avisos al staff: `it` (por defecto) o `en`                   |
+| `DEMO_MODE`                 |             | `true` muestra las credenciales demo en producción (demo pública)          |
+| `EMAIL_RECIPIENT_ALLOWLIST` |             | Solo envía emails a estas direcciones / `@dominios` (recomendado en demos) |
+
+Sin Resend ni SMTP, los emails se imprimen en la consola del servidor, que es lo práctico en desarrollo.
+
+## Estructura
+
+```
+prisma/            schema, migraciones, seed
+emails/            plantillas HTML ({{variable}}, {{#bloque}}…{{/bloque}})
+src/
+  app/
+    [lang]/        todas las páginas, por idioma (it | en); layout raíz con <html lang>
+      (auth)/      login, register, logout
+      (client)/    reserve, my-reservations, profile
+      admin/       login, unauthorized, dashboard/*
+    api/           API REST (sin prefijo de idioma)
+  i18n/            config de idiomas, diccionarios it/en y helpers de traducción
+  components/      UI: common, auth, reservations, admin, profile
+  hooks/           useAuth, useAvailability, useReservations, useTables, useAsync
+  lib/             db, auth, session, validation (Zod), scheduling, email, helpers…
+  services/        lógica de negocio (único lugar que habla con la BD)
+  types/           DTOs compartidos
+  proxy.ts         protección de rutas + comprobación de Origin (antes "middleware")
+tests/             unit/ (lógica pura) e integration/ (contra la BD)
+docs/              SETUP, API, ARCHITECTURE
+```
+
+## Emails
+
+Las emails no se envían dentro de la petición. Cada cambio inserta filas `PENDING` en `EmailLog` dentro de la misma transacción (patrón *outbox*). Después:
+
+1. justo después de responder, `after()` procesa la cola sin bloquear al usuario;
+2. `GET /api/emails` (cron) encola los recordatorios pendientes y reintenta los fallidos (hasta 3 veces).
+
+En Vercel Hobby los crons solo pueden ejecutarse una vez al día, así que `vercel.json` trae un cron diario de respaldo. Para que los recordatorios de 2 h funcionen hace falta una ejecución frecuente: el workflow `.github/workflows/email-cron.yml` llama al endpoint cada 15 minutos (requiere los secretos `APP_URL` y `CRON_SECRET` en GitHub).
+
+## Despliegue en Vercel
+
+1. Crea una base de datos PostgreSQL (Vercel Postgres/Neon o Supabase) y copia su URL.
+2. Importa el repositorio en Vercel y configura las variables de entorno de la tabla anterior. Para los emails, Resend es la opción más sencilla.
+3. El build usa `npm run vercel-build` (`prisma generate && prisma migrate deploy && next build`), así que las migraciones se aplican en cada despliegue.
+4. **Demo pública:** si publicas las credenciales (`DEMO_MODE=true`), cualquiera puede entrar como admin. Define `EMAIL_RECIPIENT_ALLOWLIST` (p. ej. `@accanto.local,tu@email.com`) para que nadie pueda usar tu dominio de envío para escribir a terceros.
+5. Opcional: siembra los datos demo una vez desde tu máquina con `DATABASE_URL=<prod> SEED_FORCE=1 NODE_ENV=production npm run db:seed`. Ojo: el seed borra las reservas existentes.
+
+## Cómo extender
+
+- **Reglas de reserva** (duración, franjas, antelación): se configuran en el panel. La lógica está en `src/lib/scheduling.ts`, que es pura y tiene tests.
+- **Nuevo tipo de email:** añade el valor a `EmailTemplate` en el schema, crea la plantilla en `emails/` y regístrala en `TEMPLATE_FILES` (`src/lib/email.ts`). Después, encólala desde `emailService`.
+- **Nuevo endpoint:** el schema Zod va en `lib/validation.ts`, la lógica en un servicio y la ruta se envuelve en `handle()` con `requireApiUser`/`requireApiAdmin`.
+- **Design system:** la guía de marca "Mediterráneo" está en `src/app/globals.css`. Tiene dos capas: la paleta de marca (`--mediterranean-blue`, `--terracotta`, `--olive`…) y los tokens semánticos que usan los componentes (`bg-surface`, `text-primary`, `bg-accent`…). Tipografía: Cormorant Garamond (títulos), Crimson Text (texto) e Inter (interfaz), con la escala `text-h1`…`text-caption`. Algunos colores de marca se oscurecen un paso al usarse como texto pequeño para cumplir WCAG AA; el detalle está comentado en el propio archivo. Tailwind 4 no usa `tailwind.config.ts`: el tema se define con `@theme` en ese CSS.
+- **Nuevo idioma:** añade el código a `locales` en `src/i18n/config.ts` y crea `src/i18n/dictionaries/<código>.ts` tipado como `Dictionary`. TypeScript señala cualquier clave que falte.
+- **v2:** pagos y señales, lista de espera, reseñas y multi-restaurante (el schema ya tiene `restaurantId` en todas las entidades).
+
+Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/API.md](docs/API.md).

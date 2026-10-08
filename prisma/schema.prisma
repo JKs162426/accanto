@@ -1,0 +1,276 @@
+// Accanto — restaurant reservation system.
+// After editing: `npm run db:migrate` (creates a migration + regenerates the client).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+/// Physical area of the restaurant.
+enum TableLocation {
+  INTERIOR
+  TERRACE
+  PRIVATE
+}
+
+/// Commercial category of the table.
+enum TableType {
+  STANDARD
+  PRIVATE
+  VIP
+}
+
+enum TableStatus {
+  ACTIVE
+  OUT_OF_SERVICE
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  ATTENDED
+  NO_SHOW
+  CANCELLED
+}
+
+enum ShiftName {
+  LUNCH
+  DINNER
+}
+
+enum HistoryAction {
+  CREATED
+  UPDATED
+  STATUS_CHANGED
+  CANCELLED
+}
+
+enum NotificationType {
+  NEW_RESERVATION
+  RESERVATION_MODIFIED
+  RESERVATION_CANCELLED
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum EmailTemplate {
+  RESERVATION_CONFIRMED
+  RESERVATION_REMINDER_24H
+  RESERVATION_REMINDER_2H
+  RESERVATION_CANCELLED
+  RESERVATION_MODIFIED
+  NEW_RESERVATION_ADMIN
+}
+
+// ─── Models ─────────────────────────────────────────────────────────────
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  /// bcrypt hash — never select this outside of the auth service.
+  password       String
+  name           String
+  phone          String?
+  role           Role     @default(CLIENT)
+  /// Bumped on password change; session tokens carrying an older value are
+  /// rejected, so a password change signs out every other device.
+  sessionVersion Int      @default(0)
+  /// Notes visible only to admins (allergies, VIP, preferences…).
+  adminNotes     String?
+  /// Notification preferences.
+  remind24h      Boolean  @default(true)
+  remind2h       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reservations  Reservation[]
+  notifications Notification[]
+  historyEvents ReservationHistory[]
+
+  @@index([role])
+}
+
+model Restaurant {
+  id                  String   @id @default(cuid())
+  name                String
+  description         String?
+  address             String?
+  phone               String?
+  email               String?
+  /// IANA zone. All reservation dates/times are interpreted in this zone.
+  timezone            String   @default("Europe/Rome")
+  /// How long a table stays occupied by one reservation ("tiempo mínimo entre reservas").
+  turnoverMinutes     Int      @default(120)
+  /// Granularity of the time slots offered to clients.
+  slotIntervalMinutes Int      @default(30)
+  /// How far ahead clients can book.
+  bookingWindowDays   Int      @default(60)
+  maxPartySize        Int      @default(8)
+  /// Used for the "estimated revenue" report.
+  avgSpendPerGuest    Decimal  @default(45) @db.Decimal(10, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  openingHours OpeningHour[]
+  closedDates  ClosedDate[]
+  tables       Table[]
+  reservations Reservation[]
+}
+
+/// One row per service shift and weekday. A weekday with no rows is closed.
+model OpeningHour {
+  id           String    @id @default(cuid())
+  restaurantId String
+  /// 0 = Sunday … 6 = Saturday (same as Date#getDay()).
+  dayOfWeek    Int
+  shift        ShiftName
+  /// "HH:mm" in restaurant local time.
+  opensAt      String
+  closesAt     String
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, dayOfWeek, shift])
+}
+
+/// Specific dates the restaurant is closed (holidays, private events).
+model ClosedDate {
+  id           String   @id @default(cuid())
+  restaurantId String
+  date         DateTime @db.Date
+  reason       String?
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, date])
+}
+
+model Table {
+  id           String        @id @default(cuid())
+  restaurantId String
+  number       Int
+  capacity     Int
+  location     TableLocation
+  type         TableType     @default(STANDARD)
+  isWindow     Boolean       @default(false)
+  status       TableStatus   @default(ACTIVE)
+  notes        String?
+  /// Soft delete: tables with past reservations are archived, not removed.
+  deletedAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  /// Number uniqueness among non-archived tables is enforced in tableService.
+  @@index([restaurantId, number])
+}
+
+model Reservation {
+  id                String            @id @default(cuid())
+  /// Human-friendly unique code shown to the client, e.g. ACC-7KQ2MX.
+  code              String            @unique
+  restaurantId      String
+  /// Null for reservations an admin created for a guest without an account.
+  clientId          String?
+  tableId           String
+  /// Restaurant-local calendar date and "HH:mm" time, as the client chose them.
+  date              DateTime          @db.Date
+  time              String
+  /// Absolute UTC interval the table is blocked for. Used for overlap checks.
+  startsAt          DateTime
+  endsAt            DateTime
+  partySize         Int
+  /// Language the guest booked in ("it" | "en"); guest emails use it.
+  locale            String            @default("it")
+  status            ReservationStatus @default(CONFIRMED)
+  guestName         String
+  guestEmail        String
+  guestPhone        String?
+  /// Special requests written by the client.
+  notes             String?
+  /// Notes only admins can see.
+  internalNotes     String?
+  reminder24hSentAt DateTime?
+  reminder2hSentAt  DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  restaurant Restaurant           @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  client     User?                @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  table      Table                @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  history    ReservationHistory[]
+
+  @@index([tableId, startsAt])
+  @@index([startsAt])
+  @@index([clientId])
+  @@index([status])
+}
+
+model ReservationHistory {
+  id            String        @id @default(cuid())
+  reservationId String
+  actorId       String?
+  action        HistoryAction
+  /// { field: { from, to } } for updates; free-form for other actions.
+  changes       Json?
+  timestamp     DateTime      @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  actor       User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([reservationId])
+}
+
+/// In-app notifications (admin dashboard bell).
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  subject   String
+  content   String
+  /// Structured payload (code, guest, date…) so the admin UI renders it in its own language.
+  data      Json?
+  /// Optional link target inside the app (without locale prefix).
+  href      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+/// Outbox for emails: rows are inserted as PENDING and sent by the queue
+/// worker (right after the request via `after()`, and by the cron route).
+model EmailLog {
+  id        String        @id @default(cuid())
+  recipient String
+  subject   String
+  template  EmailTemplate
+  /// Variables used to render the template.
+  payload   Json
+  status    EmailStatus   @default(PENDING)
+  attempts  Int           @default(0)
+  error     String?
+  sentAt    DateTime?
+  timestamp DateTime      @default(now())
+
+  @@index([status, attempts])
+}

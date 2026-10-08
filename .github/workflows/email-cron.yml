@@ -1,0 +1,19 @@
+# Runs the email worker every 15 minutes: enqueues 24h/2h reminders and
+# sends/retries pending emails. Needed on Vercel Hobby, where Vercel Cron is
+# limited to once a day. Configure repository secrets APP_URL and CRON_SECRET.
+name: Email worker
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/emails
+        run: |
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/emails"
