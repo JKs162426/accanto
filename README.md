@@ -1,4 +1,33 @@
-# Accanto · Sistema de reservas
+# Accanto · Reservation system
+
+Bilingual (Italian / English) reservation system for **Accanto**, a fictional
+Italian restaurant in Turin. Guests check real-time table availability, book in
+four steps and manage their bookings; the staff runs tables, opening hours,
+reservations, customers and reports from its own admin panel.
+
+**Live:** <https://accanto-psi.vercel.app>
+
+[![Accanto — home page](docs/screenshot.jpg)](https://accanto-psi.vercel.app)
+
+## Highlights
+
+- **Real-time availability** by date, party size and seating area, refreshed every 30 s
+- **Four-step booking** whose state lives in the URL, so it survives sign-in or sign-up
+- **My bookings** — change date, time or party size (a new table is assigned if needed) and cancel with optimistic updates
+- **Admin dashboard** — live table status, daily agenda (tables × hours), occupancy charts, customer notes and change history
+- **Reports** — occupancy, estimated revenue, frequent guests, cancellations and no-shows, with CSV export
+- **Transactional emails** with a queue: confirmation, changes, cancellation and 24 h / 2 h reminders, in the guest's language
+- **Full i18n** — the English dictionary is type-checked against the Italian one, and API errors are translated at the edge
+- **Hardened security** — CSRF protection, rate limiting, CSP and double-booking protection
+
+## Stack
+
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · PostgreSQL +
+Prisma 7 · Zod · Tailwind CSS 4 · SWR · Nodemailer · Vitest · Vercel
+
+---
+
+## Documentación técnica (español)
 
 Sistema de reservas para Accanto, un restaurante italiano en **Turín**. Es bilingüe: **italiano** como idioma principal e **inglés** como alternativa, intercambiables desde el header. Los clientes buscan disponibilidad en tiempo real, reservan mesa y gestionan sus reservas; el equipo administra mesas, horarios, reservas, clientes y reportes desde un panel propio. Incluye notificaciones por email con cola y recordatorios automáticos.
 
