@@ -113,7 +113,7 @@ model Restaurant {
   email               String?
   /// IANA zone. All reservation dates/times are interpreted in this zone.
   timezone            String   @default("Europe/Rome")
-  /// How long a table stays occupied by one reservation ("tiempo mínimo entre reservas").
+  /// How long a table stays occupied by one reservation (the brief's "minimum time between bookings").
   turnoverMinutes     Int      @default(120)
   /// Granularity of the time slots offered to clients.
   slotIntervalMinutes Int      @default(30)
