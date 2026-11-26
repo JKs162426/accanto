@@ -25,7 +25,13 @@ const STATE_TONE: Record<LiveTable["liveState"], "success" | "danger" | "warning
   OUT_OF_SERVICE: "neutral",
 };
 
-export function LiveStateBadge({ state, compact }: { state: LiveTable["liveState"]; compact?: boolean }) {
+export function LiveStateBadge({
+  state,
+  compact,
+}: {
+  state: LiveTable["liveState"];
+  compact?: boolean;
+}) {
   const { t } = useI18n();
   return (
     <Badge tone={STATE_TONE[state]} className={compact ? "px-1.5 text-[10px]" : undefined}>
@@ -67,19 +73,67 @@ export function TableForm({
     <form onSubmit={handle} noValidate className="space-y-4">
       <ErrorAlert>{error}</ErrorAlert>
       <div className="grid grid-cols-2 gap-4">
-        <Input label={f.number} name="number" type="number" min={1} defaultValue={initial?.number} required error={errors.number} />
-        <Input label={f.capacity} name="capacity" type="number" min={1} max={30} defaultValue={initial?.capacity ?? 4} required error={errors.capacity} />
-        <Select label={f.location} name="location" defaultValue={initial?.location ?? "INTERIOR"} error={errors.location}>
-          {Object.entries(t.enums.location).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        <Input
+          label={f.number}
+          name="number"
+          type="number"
+          min={1}
+          defaultValue={initial?.number}
+          required
+          error={errors.number}
+        />
+        <Input
+          label={f.capacity}
+          name="capacity"
+          type="number"
+          min={1}
+          max={30}
+          defaultValue={initial?.capacity ?? 4}
+          required
+          error={errors.capacity}
+        />
+        <Select
+          label={f.location}
+          name="location"
+          defaultValue={initial?.location ?? "INTERIOR"}
+          error={errors.location}
+        >
+          {Object.entries(t.enums.location).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
         </Select>
-        <Select label={f.type} name="type" defaultValue={initial?.type ?? "STANDARD"} error={errors.type}>
-          {Object.entries(t.enums.tableType).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        <Select
+          label={f.type}
+          name="type"
+          defaultValue={initial?.type ?? "STANDARD"}
+          error={errors.type}
+        >
+          {Object.entries(t.enums.tableType).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
         </Select>
       </div>
       <Checkbox name="isWindow" defaultChecked={initial?.isWindow} label={f.window} />
-      <Checkbox name="outOfService" defaultChecked={initial?.status === "OUT_OF_SERVICE"} label={f.outOfService} description={f.outOfServiceHint} />
-      <Textarea label={f.notes} name="notes" defaultValue={initial?.notes ?? ""} maxLength={300} error={errors.notes} />
-      <Button type="submit" loading={loading}>{submitLabel}</Button>
+      <Checkbox
+        name="outOfService"
+        defaultChecked={initial?.status === "OUT_OF_SERVICE"}
+        label={f.outOfService}
+        description={f.outOfServiceHint}
+      />
+      <Textarea
+        label={f.notes}
+        name="notes"
+        defaultValue={initial?.notes ?? ""}
+        maxLength={300}
+        error={errors.notes}
+      />
+      <Button type="submit" loading={loading}>
+        {submitLabel}
+      </Button>
     </form>
   );
 }
@@ -88,7 +142,9 @@ export default function TableManager({ initialTables }: { initialTables: LiveTab
   const { t } = useI18n();
   const tm = t.admin.tables;
   const { tables, create, update, remove } = useTables(initialTables);
-  const [modal, setModal] = useState<{ mode: "create" } | { mode: "edit"; table: LiveTable } | null>(null);
+  const [modal, setModal] = useState<
+    { mode: "create" } | { mode: "edit"; table: LiveTable } | null
+  >(null);
   const [filter, setFilter] = useState<string>("");
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const toggle = useAsync(async (table: LiveTable) =>
@@ -97,25 +153,41 @@ export default function TableManager({ initialTables }: { initialTables: LiveTab
   const del = useAsync(async (table: LiveTable) => {
     const res = await remove(table.id);
     setModal(null);
-    setMessage({ tone: "success", text: fmt(res.archived ? tm.archived : tm.deleted, { n: table.number }) });
+    setMessage({
+      tone: "success",
+      text: fmt(res.archived ? tm.archived : tm.deleted, { n: table.number }),
+    });
   });
 
   const visible = filter ? tables.filter((x) => x.location === filter) : tables;
-  const totalSeats = tables.filter((x) => x.status === "ACTIVE").reduce((sum, x) => sum + x.capacity, 0);
-  const filters: Array<[string, string]> = [["", t.common.all], ...Object.entries(t.enums.location)];
+  const totalSeats = tables
+    .filter((x) => x.status === "ACTIVE")
+    .reduce((sum, x) => sum + x.capacity, 0);
+  const filters: Array<[string, string]> = [
+    ["", t.common.all],
+    ...Object.entries(t.enums.location),
+  ];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2" role="group" aria-label={tm.filter}>
           {filters.map(([v, l]) => (
-            <button key={v} type="button" aria-pressed={filter === v} onClick={() => setFilter(v)} className={chipClasses(filter === v)}>
+            <button
+              key={v}
+              type="button"
+              aria-pressed={filter === v}
+              onClick={() => setFilter(v)}
+              className={chipClasses(filter === v)}
+            >
               {l}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted">{fmt(tm.summary, { tables: tables.length, seats: totalSeats })}</span>
+          <span className="text-muted text-sm">
+            {fmt(tm.summary, { tables: tables.length, seats: totalSeats })}
+          </span>
           <Button onClick={() => setModal({ mode: "create" })}>{tm.newTable}</Button>
         </div>
       </div>
@@ -131,16 +203,19 @@ export default function TableManager({ initialTables }: { initialTables: LiveTab
             <li
               key={table.id}
               className={cn(
-                "rounded-lg border border-line bg-surface p-5 shadow-card transition-shadow hover:shadow-hover",
+                "border-line bg-surface shadow-card hover:shadow-hover rounded-lg border p-5 transition-shadow",
                 table.status === "OUT_OF_SERVICE" && "opacity-70",
               )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <LocaleLink href={`/admin/dashboard/tables/${table.id}`} className="font-display text-h4 font-semibold text-primary hover:underline">
+                  <LocaleLink
+                    href={`/admin/dashboard/tables/${table.id}`}
+                    className="font-display text-h4 text-primary font-semibold hover:underline"
+                  >
                     {fmt(t.common.table, { n: table.number })}
                   </LocaleLink>
-                  <p className="text-sm text-muted">
+                  <p className="text-muted text-sm">
                     {fmt(tm.seats, { n: table.capacity })} · {tableTags(t, table).join(" · ")}
                   </p>
                 </div>
@@ -149,19 +224,26 @@ export default function TableManager({ initialTables }: { initialTables: LiveTab
               <div className="mt-3 min-h-10 text-sm">
                 {table.current && (
                   <p>
-                    <span className="text-muted">{tm.now}</span> {table.current.guestName} ({table.current.partySize}){" "}
-                    {fmt(tm.since, { time: table.current.time })}
+                    <span className="text-muted">{tm.now}</span> {table.current.guestName} (
+                    {table.current.partySize}) {fmt(tm.since, { time: table.current.time })}
                   </p>
                 )}
                 {table.next && (
                   <p>
-                    <span className="text-muted">{tm.nextLabel}</span> {table.next.time} · {table.next.guestName} ({table.next.partySize})
+                    <span className="text-muted">{tm.nextLabel}</span> {table.next.time} ·{" "}
+                    {table.next.guestName} ({table.next.partySize})
                   </p>
                 )}
                 {!table.current && !table.next && <p className="text-muted">{tm.nothingSoon}</p>}
               </div>
-              <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
-                <Button size="sm" variant="secondary" onClick={() => setModal({ mode: "edit", table })}>{t.common.edit}</Button>
+              <div className="border-line mt-3 flex flex-wrap gap-2 border-t pt-3">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setModal({ mode: "edit", table })}
+                >
+                  {t.common.edit}
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => void toggle.run(table)}>
                   {table.status === "ACTIVE" ? tm.outOfService : tm.reactivate}
                 </Button>
@@ -197,11 +279,16 @@ export default function TableManager({ initialTables }: { initialTables: LiveTab
                 setModal(null);
               }}
             />
-            <div className="mt-6 border-t border-line pt-4">
-              <Button variant="danger" size="sm" loading={del.loading} onClick={() => void del.run(modal.table)}>
+            <div className="border-line mt-6 border-t pt-4">
+              <Button
+                variant="danger"
+                size="sm"
+                loading={del.loading}
+                onClick={() => void del.run(modal.table)}
+              >
                 {tm.deleteTable}
               </Button>
-              <p className="mt-2 text-caption text-muted">{tm.deleteHint}</p>
+              <p className="text-caption text-muted mt-2">{tm.deleteHint}</p>
             </div>
           </>
         )}

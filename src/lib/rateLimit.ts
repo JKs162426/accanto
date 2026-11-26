@@ -8,7 +8,11 @@ import "server-only";
  */
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
-export function rateLimit(key: string, limit: number, windowMs: number): {
+export function rateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+): {
   ok: boolean;
   retryAfterSeconds: number;
 } {
@@ -63,7 +67,8 @@ export function authLimits(
   const checks: Array<{ ok: boolean; retryAfterSeconds: number }> = [];
   const ip = clientIp(request);
   if (ip) checks.push(rateLimit(`${kind}:ip:${ip}`, perIp, windowMs));
-  if (account) checks.push(rateLimit(`${kind}:acct:${account.toLowerCase()}`, perAccount, windowMs));
+  if (account)
+    checks.push(rateLimit(`${kind}:acct:${account.toLowerCase()}`, perAccount, windowMs));
   const blocked = checks.filter((c) => !c.ok);
   return blocked.length
     ? { ok: false, retryAfterSeconds: Math.max(...blocked.map((c) => c.retryAfterSeconds)) }

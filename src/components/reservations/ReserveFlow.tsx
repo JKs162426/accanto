@@ -21,7 +21,14 @@ import SearchForm, { type SearchValues } from "./SearchForm";
 
 type RestaurantProps = Pick<
   RestaurantDTO,
-  "timezone" | "bookingWindowDays" | "maxPartySize" | "turnoverMinutes" | "slotIntervalMinutes" | "openingHours" | "closedDates" | "phone"
+  | "timezone"
+  | "bookingWindowDays"
+  | "maxPartySize"
+  | "turnoverMinutes"
+  | "slotIntervalMinutes"
+  | "openingHours"
+  | "closedDates"
+  | "phone"
 >;
 
 /** Next N open days, computed with the same rules the server uses. */
@@ -37,8 +44,10 @@ function upcomingOpenDays(r: RestaurantProps, today: string, count: number, now:
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <Card>
-      <h2 className="mb-5 flex items-center gap-3 text-h4 font-semibold">
-        <span className="flex size-8 items-center justify-center rounded-full border border-gold bg-surface-raised font-ui text-sm font-semibold text-primary">{n}</span>
+      <h2 className="text-h4 mb-5 flex items-center gap-3 font-semibold">
+        <span className="border-gold bg-surface-raised font-ui text-primary flex size-8 items-center justify-center rounded-full border text-sm font-semibold">
+          {n}
+        </span>
         {title}
       </h2>
       {children}
@@ -96,7 +105,8 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
     time,
   });
 
-  const selectedTable = availability?.time === time ? availability?.tables?.find((t) => t.id === tableId) : undefined;
+  const selectedTable =
+    availability?.time === time ? availability?.tables?.find((t) => t.id === tableId) : undefined;
   const returnTo = `${pathname}?${params}`;
 
   return (
@@ -111,10 +121,12 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
           suggestedDates={suggested}
           preferenceCapacity={availability?.preferenceCapacity}
         />
-        <p className="mt-4 text-body-sm text-muted">
+        <p className="text-body-sm text-muted mt-4">
           {fmt(t.reserve.bigGroups, {
             n: restaurant.maxPartySize,
-            phone: restaurant.phone ? fmt(t.reserve.bigGroupsPhone, { phone: restaurant.phone }) : "",
+            phone: restaurant.phone
+              ? fmt(t.reserve.bigGroupsPhone, { phone: restaurant.phone })
+              : "",
           })}
         </p>
       </Step>
@@ -122,13 +134,21 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
       <Step n={2} title={t.reserve.step2}>
         {error && <ErrorAlert>{error.message}</ErrorAlert>}
         {!availability && loading && <Skeleton className="h-28" />}
-        {availability && !availability.open && <ErrorAlert tone="info">{availability.message}</ErrorAlert>}
+        {availability && !availability.open && (
+          <ErrorAlert tone="info">{availability.message}</ErrorAlert>
+        )}
         {availability?.open && (
           <>
             {availability.message && (!time || availability.slots.length === 0) && (
-              <ErrorAlert tone="warning" className="mb-4">{availability.message}</ErrorAlert>
+              <ErrorAlert tone="warning" className="mb-4">
+                {availability.message}
+              </ErrorAlert>
             )}
-            <SlotPicker slots={availability.slots} selected={time} onSelect={(t) => setParams({ time: t, table: undefined })} />
+            <SlotPicker
+              slots={availability.slots}
+              selected={time}
+              onSelect={(t) => setParams({ time: t, table: undefined })}
+            />
           </>
         )}
       </Step>
@@ -137,11 +157,17 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
       {time && availability?.slots.length !== 0 && (
         <Step n={3} title={t.reserve.step3}>
           {loading && availability?.time !== time ? (
-            <div className="flex items-center gap-2 font-ui text-sm text-muted"><Spinner className="size-4" /> {t.reserve.searchingTables}</div>
+            <div className="font-ui text-muted flex items-center gap-2 text-sm">
+              <Spinner className="size-4" /> {t.reserve.searchingTables}
+            </div>
           ) : availability?.tables && availability.tables.length > 0 ? (
             <>
-              <AvailableTables tables={availability.tables} selected={tableId} onSelect={(id) => setParams({ table: id })} />
-              <p className="mt-3 font-ui text-caption text-muted">{t.reserve.liveHint}</p>
+              <AvailableTables
+                tables={availability.tables}
+                selected={tableId}
+                onSelect={(id) => setParams({ table: id })}
+              />
+              <p className="font-ui text-caption text-muted mt-3">{t.reserve.liveHint}</p>
             </>
           ) : (
             <ErrorAlert tone="info">{availability?.message ?? t.reserve.noTablesAtTime}</ErrorAlert>
@@ -159,7 +185,12 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
               <Skeleton className="h-40" />
             ) : user ? (
               <ReservationForm
-                draft={{ date: values.date, time, partySize: values.partySize, table: selectedTable }}
+                draft={{
+                  date: values.date,
+                  time,
+                  partySize: values.partySize,
+                  table: selectedTable,
+                }}
                 user={user}
                 onSubmit={async (body) => {
                   const reservation = await create(body);
@@ -171,10 +202,16 @@ export default function ReserveFlow({ restaurant }: { restaurant: RestaurantProp
               <div className="space-y-4">
                 <p className="text-muted">{t.reserve.needAccount}</p>
                 <div className="flex flex-wrap gap-2">
-                  <LocaleLink href={`/login?next=${encodeURIComponent(returnTo)}`} className={buttonClasses("primary")}>
+                  <LocaleLink
+                    href={`/login?next=${encodeURIComponent(returnTo)}`}
+                    className={buttonClasses("primary")}
+                  >
                     {t.nav.login}
                   </LocaleLink>
-                  <LocaleLink href={`/register?next=${encodeURIComponent(returnTo)}`} className={buttonClasses("secondary")}>
+                  <LocaleLink
+                    href={`/register?next=${encodeURIComponent(returnTo)}`}
+                    className={buttonClasses("secondary")}
+                  >
                     {t.nav.register}
                   </LocaleLink>
                 </div>

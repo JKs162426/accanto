@@ -9,7 +9,13 @@ import { apiFetch } from "@/lib/apiClient";
  * Signs out with a POST (a plain link could be triggered by any third-party
  * page). Then goes home and refreshes server components.
  */
-export default function LogoutButton({ className, children }: { className?: string; children?: ReactNode }) {
+export default function LogoutButton({
+  className,
+  children,
+}: {
+  className?: string;
+  children?: ReactNode;
+}) {
   const router = useRouter();
   const { t, href } = useI18n();
   const [pending, setPending] = useState(false);

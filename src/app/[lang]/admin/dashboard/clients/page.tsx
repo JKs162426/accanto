@@ -13,7 +13,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.admin.clients.title };
 }
 
-async function Clients({ searchParams }: { searchParams: PageProps<"/[lang]/admin/dashboard/clients">["searchParams"] }) {
+async function Clients({
+  searchParams,
+}: {
+  searchParams: PageProps<"/[lang]/admin/dashboard/clients">["searchParams"];
+}) {
   const [sp, { t, lang }] = await Promise.all([searchParams, getI18n()]);
   await requireAdmin(lang);
   const q = typeof sp.q === "string" ? sp.q.slice(0, 100) : undefined;
@@ -28,7 +32,14 @@ async function Clients({ searchParams }: { searchParams: PageProps<"/[lang]/admi
           lastVisit: c.lastVisit?.toISOString() ?? null,
         }))}
       />
-      <Pagination t={t} page={result.page} pageSize={result.pageSize} total={result.total} basePath="/admin/dashboard/clients" params={{ q }} />
+      <Pagination
+        t={t}
+        page={result.page}
+        pageSize={result.pageSize}
+        total={result.total}
+        basePath="/admin/dashboard/clients"
+        params={{ q }}
+      />
     </>
   );
 }

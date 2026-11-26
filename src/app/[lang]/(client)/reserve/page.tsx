@@ -19,8 +19,8 @@ export default async function ReservePage() {
   const { t } = await getI18n();
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-[34px] leading-tight sm:text-h2">{t.reserve.title}</h1>
-      <p className="mt-2 mb-8 text-body-lg text-muted">{t.reserve.lead}</p>
+      <h1 className="sm:text-h2 text-[34px] leading-tight">{t.reserve.title}</h1>
+      <p className="text-body-lg text-muted mt-2 mb-8">{t.reserve.lead}</p>
       <Suspense fallback={<Loading rows={3} label={t.common.loading} />}>
         <Flow />
       </Suspense>

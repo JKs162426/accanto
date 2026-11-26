@@ -23,7 +23,10 @@ type Props = PageProps<"/[lang]/my-reservations/[id]">;
 async function Detail({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
   const [{ id }, sp, { t, lang }] = await Promise.all([params, searchParams, getI18n()]);
   const user = await requireUser(lang, `/my-reservations/${id}`);
-  const [raw, restaurant] = await Promise.all([orNotFound(getReservation(id, user)), getRestaurant()]);
+  const [raw, restaurant] = await Promise.all([
+    orNotFound(getReservation(id, user)),
+    getRestaurant(),
+  ]);
   const reservation = toReservationDTO(raw, user);
   const editable = isClientEditable(raw);
   const action = sp.action === "edit" || sp.action === "cancel" ? sp.action : undefined;
@@ -31,7 +34,10 @@ async function Detail({ params, searchParams }: Pick<Props, "params" | "searchPa
   const rows: Array<[string, string]> = [
     [t.reserve.time, reservation.time],
     [t.reserve.people, plural(reservation.partySize, t.common.people)],
-    [t.reserve.table, `${reservation.table.number} · ${tableTags(t, reservation.table).join(", ")}`],
+    [
+      t.reserve.table,
+      `${reservation.table.number} · ${tableTags(t, reservation.table).join(", ")}`,
+    ],
     [t.myReservations.bookedFor, reservation.guestName],
   ];
 
@@ -40,8 +46,12 @@ async function Detail({ params, searchParams }: Pick<Props, "params" | "searchPa
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-sm font-semibold tracking-widest text-accent-text">{reservation.code}</p>
-            <h1 className="mt-1 text-h3 first-letter:uppercase">{formatDate(reservation.date, lang)}</h1>
+            <p className="text-accent-text font-mono text-sm font-semibold tracking-widest">
+              {reservation.code}
+            </p>
+            <h1 className="text-h3 mt-1 first-letter:uppercase">
+              {formatDate(reservation.date, lang)}
+            </h1>
           </div>
           <StatusBadge status={reservation.status} />
         </div>
@@ -69,7 +79,7 @@ async function Detail({ params, searchParams }: Pick<Props, "params" | "searchPa
           initialAction={action}
         />
       ) : (
-        <p className="text-sm text-muted">
+        <p className="text-muted text-sm">
           {t.myReservations.notEditable}
           {restaurant.phone && fmt(t.myReservations.callUs, { phone: restaurant.phone })}
         </p>
@@ -82,7 +92,10 @@ export default async function ReservationDetailPage(props: Props) {
   const { t } = await getI18n();
   return (
     <div className="mx-auto max-w-2xl">
-      <LocaleLink href="/my-reservations" className="mb-4 inline-block font-ui text-sm text-muted hover:text-primary">
+      <LocaleLink
+        href="/my-reservations"
+        className="font-ui text-muted hover:text-primary mb-4 inline-block text-sm"
+      >
         {t.myReservations.back}
       </LocaleLink>
       <Suspense fallback={<Loading rows={2} label={t.common.loading} />}>

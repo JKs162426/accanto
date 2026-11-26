@@ -22,7 +22,9 @@ function Links({ path }: { path: string | null }) {
         aria-current={active ? "page" : undefined}
         className={cn(
           "rounded-md px-3 py-2 text-sm transition-colors hover:bg-white/10",
-          active ? "font-semibold text-cream underline decoration-gold decoration-2 underline-offset-8" : "text-cream/80 hover:text-cream",
+          active
+            ? "text-cream decoration-gold font-semibold underline decoration-2 underline-offset-8"
+            : "text-cream/80 hover:text-cream",
         )}
       >
         {l.label}
@@ -61,13 +63,20 @@ export default function Navigation({ userSlot }: { userSlot: ReactNode }) {
       </nav>
       <button
         type="button"
-        className="rounded-md p-2 text-cream hover:bg-white/10 md:hidden"
+        className="text-cream rounded-md p-2 hover:bg-white/10 md:hidden"
         aria-expanded={open}
         aria-controls="mobile-menu"
         aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
         onClick={() => setOpen((o) => !o)}
       >
-        <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        >
           {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
         </svg>
       </button>
@@ -75,7 +84,10 @@ export default function Navigation({ userSlot }: { userSlot: ReactNode }) {
         <CloseOnNavigate onNavigate={closeMenu} />
       </Suspense>
       {open && (
-        <div id="mobile-menu" className="absolute inset-x-0 top-full border-b-2 border-gold/60 bg-primary px-4 py-4 shadow-modal md:hidden">
+        <div
+          id="mobile-menu"
+          className="border-gold/60 bg-primary shadow-modal absolute inset-x-0 top-full border-b-2 px-4 py-4 md:hidden"
+        >
           <nav className="flex flex-col gap-1" aria-label={t.nav.main}>
             {links}
           </nav>

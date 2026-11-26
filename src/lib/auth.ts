@@ -20,7 +20,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 /** Issue the session cookie. `sessionVersion` must be the user's current DB value. */
 export async function startSession(user: SessionUser, sessionVersion: number): Promise<void> {
-  const token = await signSession({ sub: user.id, role: user.role, name: user.name, v: sessionVersion });
+  const token = await signSession({
+    sub: user.id,
+    role: user.role,
+    name: user.name,
+    v: sessionVersion,
+  });
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     // Lax: the cookie is not sent on cross-site POST/PATCH/DELETE, which

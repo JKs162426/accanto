@@ -15,9 +15,17 @@ export function jsonError(
   details?: { fieldErrors?: Record<string, string[] | undefined> },
 ) {
   const t = getDictionary(requestLocale(request));
-  const translated = details?.fieldErrors ? { fieldErrors: translateFieldErrors(t, details.fieldErrors) } : undefined;
+  const translated = details?.fieldErrors
+    ? { fieldErrors: translateFieldErrors(t, details.fieldErrors) }
+    : undefined;
   return NextResponse.json(
-    { error: { code, message: translateError(t, code, params), ...(translated ? { details: translated } : {}) } },
+    {
+      error: {
+        code,
+        message: translateError(t, code, params),
+        ...(translated ? { details: translated } : {}),
+      },
+    },
     { status },
   );
 }
@@ -30,7 +38,10 @@ const MAX_BODY_BYTES = 64 * 1024;
  * before being buffered whole (413). Throws a 400 AppError with field errors
  * (dictionary keys) on invalid input.
  */
-export async function parseBody<T extends z.ZodType>(request: Request, schema: T): Promise<z.infer<T>> {
+export async function parseBody<T extends z.ZodType>(
+  request: Request,
+  schema: T,
+): Promise<z.infer<T>> {
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (declared > MAX_BODY_BYTES) throw new AppError(413, "PAYLOAD_TOO_LARGE");
   let text = "";
@@ -68,9 +79,17 @@ function parseWith<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {
   const result = schema.safeParse(input);
   if (!result.success) {
     const flat = z.flattenError(result.error);
-    throw new AppError(400, "VALIDATION_ERROR", {}, {
-      fieldErrors: { ...(flat.formErrors.length ? { _form: flat.formErrors } : {}), ...flat.fieldErrors } as Record<string, string[]>,
-    });
+    throw new AppError(
+      400,
+      "VALIDATION_ERROR",
+      {},
+      {
+        fieldErrors: {
+          ...(flat.formErrors.length ? { _form: flat.formErrors } : {}),
+          ...flat.fieldErrors,
+        } as Record<string, string[]>,
+      },
+    );
   }
   return result.data;
 }
@@ -91,7 +110,8 @@ type Handler<C> = (request: Request, context: C) => Promise<Response>;
 
 /** API responses carry per-user data: never let browsers or CDNs store them. */
 function noStore(response: Response): Response {
-  if (!response.headers.has("Cache-Control")) response.headers.set("Cache-Control", "private, no-store");
+  if (!response.headers.has("Cache-Control"))
+    response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
 

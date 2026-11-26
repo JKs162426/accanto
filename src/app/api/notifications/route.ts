@@ -20,7 +20,10 @@ export const GET = handle(async () => {
 /** Mark some (ids) or all of the caller's notifications as read. */
 export const PATCH = handle(async (request) => {
   const user = await requireApiUser();
-  const { ids } = await parseBody(request, z.object({ ids: z.array(z.string()).max(100).optional() }));
+  const { ids } = await parseBody(
+    request,
+    z.object({ ids: z.array(z.string()).max(100).optional() }),
+  );
   await db.notification.updateMany({
     where: { userId: user.id, read: false, ...(ids ? { id: { in: ids } } : {}) },
     data: { read: true },

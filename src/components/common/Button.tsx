@@ -53,7 +53,16 @@ interface ButtonProps extends ComponentProps<"button"> {
   loading?: boolean;
 }
 
-export function Button({ variant, size, loading, className, children, disabled, type = "button", ...rest }: ButtonProps) {
+export function Button({
+  variant,
+  size,
+  loading,
+  className,
+  children,
+  disabled,
+  type = "button",
+  ...rest
+}: ButtonProps) {
   return (
     <button
       type={type}
@@ -63,7 +72,10 @@ export function Button({ variant, size, loading, className, children, disabled, 
       {...rest}
     >
       {loading && (
-        <span className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden />
+        <span
+          className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+          aria-hidden
+        />
       )}
       {children}
     </button>

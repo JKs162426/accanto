@@ -10,5 +10,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function AdminLayout({ children }: LayoutProps<"/[lang]/admin">) {
-  return <div className="flex min-h-screen flex-col bg-background">{children}</div>;
+  return <div className="bg-background flex min-h-screen flex-col">{children}</div>;
 }

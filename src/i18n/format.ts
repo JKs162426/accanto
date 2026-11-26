@@ -2,7 +2,9 @@
 
 /** Replace {placeholders}: fmt("Ciao {name}", { name: "Ana" }). */
 export function fmt(message: string, vars: Record<string, string | number> = {}): string {
-  return message.replace(/\{(\w+)\}/g, (_, key: string) => (key in vars ? String(vars[key]) : `{${key}}`));
+  return message.replace(/\{(\w+)\}/g, (_, key: string) =>
+    key in vars ? String(vars[key]) : `{${key}}`,
+  );
 }
 
 export interface Plural {

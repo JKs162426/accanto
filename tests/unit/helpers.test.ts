@@ -11,15 +11,23 @@ import {
 
 describe("time zones", () => {
   it("converts Rome wall-clock time to UTC in winter (UTC+1) and summer (UTC+2)", () => {
-    expect(zonedToUtc("2026-01-15", "21:00", "Europe/Rome").toISOString()).toBe("2026-01-15T20:00:00.000Z");
-    expect(zonedToUtc("2026-07-15", "21:00", "Europe/Rome").toISOString()).toBe("2026-07-15T19:00:00.000Z");
+    expect(zonedToUtc("2026-01-15", "21:00", "Europe/Rome").toISOString()).toBe(
+      "2026-01-15T20:00:00.000Z",
+    );
+    expect(zonedToUtc("2026-07-15", "21:00", "Europe/Rome").toISOString()).toBe(
+      "2026-07-15T19:00:00.000Z",
+    );
   });
 
   it("handles the DST switch day (last Sunday of March)", () => {
     // 2026-03-29: clocks jump 02:00 → 03:00. Dinner is after the change: UTC+2.
-    expect(zonedToUtc("2026-03-29", "20:00", "Europe/Rome").toISOString()).toBe("2026-03-29T18:00:00.000Z");
+    expect(zonedToUtc("2026-03-29", "20:00", "Europe/Rome").toISOString()).toBe(
+      "2026-03-29T18:00:00.000Z",
+    );
     // Lunch the day before is still UTC+1.
-    expect(zonedToUtc("2026-03-28", "13:00", "Europe/Rome").toISOString()).toBe("2026-03-28T12:00:00.000Z");
+    expect(zonedToUtc("2026-03-28", "13:00", "Europe/Rome").toISOString()).toBe(
+      "2026-03-28T12:00:00.000Z",
+    );
   });
 
   it("round-trips UTC → local", () => {
@@ -44,7 +52,8 @@ describe("calendar helpers", () => {
 
 describe("reservation codes", () => {
   it("uses the ACC- prefix and an unambiguous alphabet", () => {
-    for (let i = 0; i < 200; i++) expect(generateReservationCode()).toMatch(/^ACC-[2-9A-HJKMNP-Z]{6}$/);
+    for (let i = 0; i < 200; i++)
+      expect(generateReservationCode()).toMatch(/^ACC-[2-9A-HJKMNP-Z]{6}$/);
   });
 });
 

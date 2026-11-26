@@ -6,14 +6,25 @@ import { locales } from "@/i18n";
 import "../globals.css";
 
 // Brand typography: Cormorant Garamond (headings), Crimson Text (body), Inter (UI).
-const cormorant = Cormorant_Garamond({ variable: "--font-cormorant", subsets: ["latin"], weight: ["500", "600", "700"], style: ["normal", "italic"] });
-const crimson = Crimson_Text({ variable: "--font-crimson", subsets: ["latin"], weight: ["400", "600"], style: ["normal", "italic"] });
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+});
+const crimson = Crimson_Text({
+  variable: "--font-crimson",
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  style: ["normal", "italic"],
+});
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
 /** Public origin: APP_URL, else the Vercel production domain, else localhost. */
 function siteUrl(): string {
   if (process.env.APP_URL) return process.env.APP_URL;
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL)
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   return "http://localhost:3000";
 }
 
@@ -29,7 +40,10 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(siteUrl()),
     title: { default: t.meta.title, template: t.meta.titleTemplate },
     description: t.meta.description,
-    alternates: { canonical: `/${lang}`, languages: Object.fromEntries(locales.map((l) => [l, `/${l}`])) },
+    alternates: {
+      canonical: `/${lang}`,
+      languages: Object.fromEntries(locales.map((l) => [l, `/${l}`])),
+    },
     // The images come from the opengraph-image / twitter-image files in this folder;
     // icons from favicon.ico, icon.svg and apple-icon.png in src/app.
     openGraph: {
@@ -52,7 +66,10 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
   const { lang, t } = await getI18n();
   return (
-    <html lang={lang} className={`${cormorant.variable} ${crimson.variable} ${inter.variable} h-full antialiased`}>
+    <html
+      lang={lang}
+      className={`${cormorant.variable} ${crimson.variable} ${inter.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col">
         <I18nProvider lang={lang} t={t}>
           {children}

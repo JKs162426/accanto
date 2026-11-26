@@ -8,7 +8,11 @@ import Pagination from "@/components/common/Pagination";
 import { requireAdmin } from "@/lib/auth";
 import { dayOfWeek, minutesToTime, timeToMinutes, todayIn } from "@/lib/helpers";
 import { reservationListQuerySchema } from "@/lib/validation";
-import { listReservations, reservationsForDay, toReservationDTO } from "@/services/reservationService";
+import {
+  listReservations,
+  reservationsForDay,
+  toReservationDTO,
+} from "@/services/reservationService";
 import { getRestaurant } from "@/services/restaurantService";
 import { getI18n } from "@/i18n/server";
 import { listTables } from "@/services/tableService";
@@ -25,9 +29,13 @@ async function Reservations({ searchParams }: { searchParams: SP }) {
   const { t, lang } = await getI18n();
   const admin = await requireAdmin(lang);
   const raw = await searchParams;
-  const sp = Object.fromEntries(Object.entries(raw).filter(([, v]) => typeof v === "string" && v)) as Record<string, string>;
+  const sp = Object.fromEntries(
+    Object.entries(raw).filter(([, v]) => typeof v === "string" && v),
+  ) as Record<string, string>;
   const parsed = reservationListQuerySchema.safeParse({ scope: "upcoming", ...sp });
-  const filters = parsed.success ? parsed.data : reservationListQuerySchema.parse({ scope: "upcoming" });
+  const filters = parsed.success
+    ? parsed.data
+    : reservationListQuerySchema.parse({ scope: "upcoming" });
   // A specific date shows that whole day regardless of the upcoming/past scope.
   if (filters.date) filters.scope = "all";
 
@@ -74,7 +82,9 @@ async function Reservations({ searchParams }: { searchParams: SP }) {
   );
 }
 
-export default async function ReservationsPage(props: PageProps<"/[lang]/admin/dashboard/reservations">) {
+export default async function ReservationsPage(
+  props: PageProps<"/[lang]/admin/dashboard/reservations">,
+) {
   const { t } = await getI18n();
   return (
     <>

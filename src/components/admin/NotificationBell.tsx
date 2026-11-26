@@ -17,7 +17,14 @@ interface NotificationItem {
   subject: string;
   content: string;
   /** Structured payload; rendered in the viewer's language when present. */
-  data: { code: string; guestName: string; date: string; time: string; partySize: number; table: number } | null;
+  data: {
+    code: string;
+    guestName: string;
+    date: string;
+    time: string;
+    partySize: number;
+    table: number;
+  } | null;
   href: string | null;
   read: boolean;
   createdAt: string;
@@ -40,9 +47,13 @@ export default function NotificationBell() {
   const n = t.admin.notifications;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { data, mutate } = useSWR<{ items: NotificationItem[]; unread: number }>("/api/notifications", swrFetcher, {
-    refreshInterval: 20_000,
-  });
+  const { data, mutate } = useSWR<{ items: NotificationItem[]; unread: number }>(
+    "/api/notifications",
+    swrFetcher,
+    {
+      refreshInterval: 20_000,
+    },
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -63,13 +74,23 @@ export default function NotificationBell() {
         await apiFetch("/api/notifications", { method: "PATCH", body: {} });
         return current && { unread: 0, items: current.items.map((x) => ({ ...x, read: true })) };
       },
-      { optimisticData: (c) => ({ unread: 0, items: (c?.items ?? []).map((x) => ({ ...x, read: true })) }), rollbackOnError: true },
+      {
+        optimisticData: (c) => ({
+          unread: 0,
+          items: (c?.items ?? []).map((x) => ({ ...x, read: true })),
+        }),
+        rollbackOnError: true,
+      },
     );
   }
 
   function render(item: NotificationItem): { title: string; body: string } {
     const typeLabel = n.types[item.type] ?? item.type;
-    if (!item.data) return { title: item.subject === "welcome" ? n.welcome : `${typeLabel} · ${item.subject}`, body: item.subject === "welcome" ? n.welcomeText : item.content };
+    if (!item.data)
+      return {
+        title: item.subject === "welcome" ? n.welcome : `${typeLabel} · ${item.subject}`,
+        body: item.subject === "welcome" ? n.welcomeText : item.content,
+      };
     const d = item.data;
     return {
       title: `${typeLabel} · ${d.code}`,
@@ -84,31 +105,46 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-md border border-line bg-surface-raised p-2 text-primary hover:bg-primary-soft"
+        className="border-line bg-surface-raised text-primary hover:bg-primary-soft relative rounded-md border p-2"
         aria-label={unread ? fmt(n.unread, { n: unread }) : n.label}
         aria-expanded={open}
       >
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
           <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" />
         </svg>
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-on-accent ring-2 ring-background">
+          <span className="bg-accent text-on-accent ring-background absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold ring-2">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-line bg-surface-raised shadow-modal">
-          <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <p className="font-medium text-primary">{n.label}</p>
+        <div className="border-line bg-surface-raised shadow-modal absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border">
+          <div className="border-line flex items-center justify-between border-b px-4 py-3">
+            <p className="text-primary font-medium">{n.label}</p>
             {unread > 0 && (
-              <button type="button" onClick={markAllRead} className="text-caption font-medium text-primary hover:underline">
+              <button
+                type="button"
+                onClick={markAllRead}
+                className="text-caption text-primary font-medium hover:underline"
+              >
                 {n.markAll}
               </button>
             )}
           </div>
-          <ul className="max-h-96 divide-y divide-line overflow-y-auto">
-            {(data?.items ?? []).length === 0 && <li className="px-4 py-6 text-center text-sm text-muted">{n.empty}</li>}
+          <ul className="divide-line max-h-96 divide-y overflow-y-auto">
+            {(data?.items ?? []).length === 0 && (
+              <li className="text-muted px-4 py-6 text-center text-sm">{n.empty}</li>
+            )}
             {data?.items.map((item) => {
               const { title, body } = render(item);
               return (
@@ -116,13 +152,18 @@ export default function NotificationBell() {
                   <LocaleLink
                     href={item.href ?? "#"}
                     onClick={() => setOpen(false)}
-                    className={cn("block px-4 py-3 text-sm hover:bg-surface-muted", !item.read && "bg-primary-soft/60")}
+                    className={cn(
+                      "hover:bg-surface-muted block px-4 py-3 text-sm",
+                      !item.read && "bg-primary-soft/60",
+                    )}
                   >
                     <span className="flex items-center justify-between gap-2">
                       <span className="font-medium">{title}</span>
-                      <span className="shrink-0 text-caption text-muted">{timeAgo(item.createdAt, n)}</span>
+                      <span className="text-caption text-muted shrink-0">
+                        {timeAgo(item.createdAt, n)}
+                      </span>
                     </span>
-                    <span className="mt-0.5 block text-muted">{body}</span>
+                    <span className="text-muted mt-0.5 block">{body}</span>
                   </LocaleLink>
                 </li>
               );

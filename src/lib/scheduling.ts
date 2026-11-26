@@ -53,10 +53,7 @@ export function generateSlots(
 }
 
 export type DateRejection =
-  | "CLOSED_WEEKDAY"
-  | "CLOSED_DATE"
-  | "IN_THE_PAST"
-  | "BEYOND_BOOKING_WINDOW";
+  "CLOSED_WEEKDAY" | "CLOSED_DATE" | "IN_THE_PAST" | "BEYOND_BOOKING_WINDOW";
 
 export interface DaySchedule {
   date: string;
@@ -130,7 +127,10 @@ export interface BusyInterval {
   endsAt: Date;
 }
 
-export function matchesPreference(table: TableLike, preference?: SeatingPreference | null): boolean {
+export function matchesPreference(
+  table: TableLike,
+  preference?: SeatingPreference | null,
+): boolean {
   switch (preference) {
     case undefined:
     case null:

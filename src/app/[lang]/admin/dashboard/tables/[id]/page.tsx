@@ -19,7 +19,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.admin.tables.title };
 }
 
-async function TableDetail({ params }: { params: PageProps<"/[lang]/admin/dashboard/tables/[id]">["params"] }) {
+async function TableDetail({
+  params,
+}: {
+  params: PageProps<"/[lang]/admin/dashboard/tables/[id]">["params"];
+}) {
   const [{ id }, { t, lang }] = await Promise.all([params, getI18n()]);
   await requireAdmin(lang);
   const table = await orNotFound(getTable(id));
@@ -34,7 +38,10 @@ async function TableDetail({ params }: { params: PageProps<"/[lang]/admin/dashbo
 
   return (
     <>
-      <PageHeader title={fmt(t.common.table, { n: table.number })} description={fmt(t.admin.tables.completed, { n: completed })} />
+      <PageHeader
+        title={fmt(t.common.table, { n: table.number })}
+        description={fmt(t.admin.tables.completed, { n: completed })}
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title={t.admin.tables.config} />
@@ -43,13 +50,19 @@ async function TableDetail({ params }: { params: PageProps<"/[lang]/admin/dashbo
         <Card>
           <CardHeader title={t.admin.tables.upcoming} />
           {upcoming.length === 0 ? (
-            <p className="text-sm text-muted">{t.admin.tables.noUpcoming}</p>
+            <p className="text-muted text-sm">{t.admin.tables.noUpcoming}</p>
           ) : (
-            <ul className="divide-y divide-line">
+            <ul className="divide-line divide-y">
               {upcoming.map((r) => (
                 <li key={r.id}>
-                  <LocaleLink href={`/admin/dashboard/reservations/${r.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:text-primary hover:underline">
-                    <span>{formatDate(fromDbDate(r.date), lang, "short")} · {r.time} · {r.guestName} ({r.partySize})</span>
+                  <LocaleLink
+                    href={`/admin/dashboard/reservations/${r.id}`}
+                    className="hover:text-primary flex items-center justify-between gap-3 py-2.5 text-sm hover:underline"
+                  >
+                    <span>
+                      {formatDate(fromDbDate(r.date), lang, "short")} · {r.time} · {r.guestName} (
+                      {r.partySize})
+                    </span>
                     <StatusBadge status={r.status} />
                   </LocaleLink>
                 </li>
@@ -66,7 +79,12 @@ export default async function TablePage(props: PageProps<"/[lang]/admin/dashboar
   const { t } = await getI18n();
   return (
     <>
-      <LocaleLink href="/admin/dashboard/tables" className="mb-2 inline-block text-sm text-muted hover:text-primary">{t.admin.tables.back}</LocaleLink>
+      <LocaleLink
+        href="/admin/dashboard/tables"
+        className="text-muted hover:text-primary mb-2 inline-block text-sm"
+      >
+        {t.admin.tables.back}
+      </LocaleLink>
       <Suspense fallback={<Loading rows={2} label={t.common.loading} />}>
         <TableDetail params={props.params} />
       </Suspense>

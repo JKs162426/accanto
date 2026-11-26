@@ -25,7 +25,11 @@ async function Profile() {
   const [profile, history, stats] = await Promise.all([
     getProfile(user.id),
     listReservations({ scope: "past", pageSize: 5 }, user),
-    db.reservation.groupBy({ by: ["status"], where: { clientId: user.id }, _count: { _all: true } }),
+    db.reservation.groupBy({
+      by: ["status"],
+      where: { clientId: user.id },
+      _count: { _all: true },
+    }),
   ]);
   const count = (s: string) => stats.find((x) => x.status === s)?._count._all ?? 0;
 
@@ -40,12 +44,16 @@ async function Profile() {
         <Card>
           <CardHeader
             title={t.profile.history}
-            action={<LocaleLink href="/my-reservations?tab=past" className={cn(linkClasses, "text-sm")}>{t.profile.seeAll}</LocaleLink>}
+            action={
+              <LocaleLink href="/my-reservations?tab=past" className={cn(linkClasses, "text-sm")}>
+                {t.profile.seeAll}
+              </LocaleLink>
+            }
           />
           {history.items.length === 0 ? (
-            <p className="text-sm text-muted">{t.profile.noHistory}</p>
+            <p className="text-muted text-sm">{t.profile.noHistory}</p>
           ) : (
-            <ul className="divide-y divide-line">
+            <ul className="divide-line divide-y">
               {history.items.map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                   <LocaleLink href={`/my-reservations/${r.id}`} className="hover:text-primary">
@@ -57,7 +65,9 @@ async function Profile() {
             </ul>
           )}
         </Card>
-        <p className="font-ui text-caption text-muted">{fmt(t.profile.memberSince, { date: formatMonthYear(profile.createdAt, lang) })}</p>
+        <p className="font-ui text-caption text-muted">
+          {fmt(t.profile.memberSince, { date: formatMonthYear(profile.createdAt, lang) })}
+        </p>
       </div>
     </div>
   );
@@ -67,7 +77,7 @@ export default async function ProfilePage() {
   const { t } = await getI18n();
   return (
     <>
-      <h1 className="mb-8 text-[34px] leading-tight sm:text-h2">{t.profile.title}</h1>
+      <h1 className="sm:text-h2 mb-8 text-[34px] leading-tight">{t.profile.title}</h1>
       <Suspense fallback={<Loading rows={3} label={t.common.loading} />}>
         <Profile />
       </Suspense>

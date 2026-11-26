@@ -30,7 +30,18 @@ const NOW = new Date("2026-10-06T08:00:00Z");
 describe("generateSlots", () => {
   it("lets guests finish before close: last slot = close − turnover", () => {
     const slots = generateSlots(hours, 4, 120, 30).map((s) => s.time);
-    expect(slots).toEqual(["12:00", "12:30", "13:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"]);
+    expect(slots).toEqual([
+      "12:00",
+      "12:30",
+      "13:00",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00",
+      "20:30",
+      "21:00",
+    ]);
   });
 
   it("has no slots on closed weekdays", () => {
@@ -41,13 +52,17 @@ describe("generateSlots", () => {
 describe("getDaySchedule", () => {
   it("rejects closed weekdays, closed dates, past dates and dates beyond the window", () => {
     expect(getDaySchedule("2026-10-06", config, hours, [], NOW).rejection).toBe("CLOSED_WEEKDAY");
-    expect(getDaySchedule("2026-10-08", config, hours, [{ date: "2026-10-08", reason: "Evento" }], NOW)).toMatchObject({
+    expect(
+      getDaySchedule("2026-10-08", config, hours, [{ date: "2026-10-08", reason: "Evento" }], NOW),
+    ).toMatchObject({
       open: false,
       rejection: "CLOSED_DATE",
       closedReason: "Evento",
     });
     expect(getDaySchedule("2026-10-05", config, hours, [], NOW).rejection).toBe("IN_THE_PAST");
-    expect(getDaySchedule("2026-12-31", config, hours, [], NOW).rejection).toBe("BEYOND_BOOKING_WINDOW");
+    expect(getDaySchedule("2026-12-31", config, hours, [], NOW).rejection).toBe(
+      "BEYOND_BOOKING_WINDOW",
+    );
     expect(getDaySchedule("2026-10-08", config, hours, [], NOW).open).toBe(true);
   });
 
@@ -64,8 +79,12 @@ describe("overlaps", () => {
 
   it("blocks the table for the whole turnover", () => {
     const a = at("20:00");
-    expect(intervalsOverlap(a.startsAt, a.endsAt, at("21:30").startsAt, at("21:30").endsAt)).toBe(true);
-    expect(intervalsOverlap(a.startsAt, a.endsAt, at("18:30").startsAt, at("18:30").endsAt)).toBe(true);
+    expect(intervalsOverlap(a.startsAt, a.endsAt, at("21:30").startsAt, at("21:30").endsAt)).toBe(
+      true,
+    );
+    expect(intervalsOverlap(a.startsAt, a.endsAt, at("18:30").startsAt, at("18:30").endsAt)).toBe(
+      true,
+    );
   });
 
   it("allows back-to-back bookings (half-open intervals)", () => {
@@ -76,8 +95,20 @@ describe("overlaps", () => {
 });
 
 describe("findAvailableTables", () => {
-  const table = (id: string, number: number, capacity: number, extra: Partial<TableLike> = {}): TableLike => ({
-    id, number, capacity, location: "INTERIOR", type: "STANDARD", isWindow: false, status: "ACTIVE", ...extra,
+  const table = (
+    id: string,
+    number: number,
+    capacity: number,
+    extra: Partial<TableLike> = {},
+  ): TableLike => ({
+    id,
+    number,
+    capacity,
+    location: "INTERIOR",
+    type: "STANDARD",
+    isWindow: false,
+    status: "ACTIVE",
+    ...extra,
   });
   const tables = [
     table("t9", 9, 8, { location: "PRIVATE", type: "PRIVATE" }),
@@ -117,6 +148,8 @@ describe("findAvailableTables", () => {
     expect(max.TERRACE).toBe(4);
     expect(max.PRIVATE).toBe(8);
     // t2 (out of service) and t3 (deleted) don't count.
-    expect(maxCapacityByPreference(tables.filter((t) => t.id === "t2" || t.id === "t3"))[""]).toBe(0);
+    expect(maxCapacityByPreference(tables.filter((t) => t.id === "t2" || t.id === "t3"))[""]).toBe(
+      0,
+    );
   });
 });

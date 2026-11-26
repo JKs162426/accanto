@@ -36,7 +36,7 @@ export default function Modal({
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-labelledby="modal-title"
-      className={`m-auto w-[calc(100%-2rem)] ${size === "lg" ? "max-w-3xl" : "max-w-lg"} rounded-xl border border-line bg-background p-0 text-foreground shadow-modal`}
+      className={`m-auto w-[calc(100%-2rem)] ${size === "lg" ? "max-w-3xl" : "max-w-lg"} border-line bg-background text-foreground shadow-modal rounded-xl border p-0`}
     >
       {open && (
         <div className="max-h-[85vh] overflow-y-auto p-5 sm:p-6">
@@ -47,10 +47,16 @@ export default function Modal({
             <button
               type="button"
               onClick={onClose}
-              className="-m-1 rounded-md p-1 text-muted hover:bg-surface-muted hover:text-foreground"
+              className="text-muted hover:bg-surface-muted hover:text-foreground -m-1 rounded-md p-1"
               aria-label={t.common.close}
             >
-              <svg viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <svg
+                viewBox="0 0 20 20"
+                className="size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
                 <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
               </svg>
             </button>

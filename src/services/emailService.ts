@@ -3,7 +3,16 @@ import { db } from "@/lib/db";
 import { deliverEmail, isRecipientAllowed, renderEmail } from "@/lib/email";
 import { EMAIL_MAX_ATTEMPTS } from "@/lib/constants";
 import { formatDate, fromDbDate } from "@/lib/helpers";
-import { defaultLocale, fmt, getDictionary, hasLocale, localePath, plural, type Dictionary, type Locale } from "@/i18n";
+import {
+  defaultLocale,
+  fmt,
+  getDictionary,
+  hasLocale,
+  localePath,
+  plural,
+  type Dictionary,
+  type Locale,
+} from "@/i18n";
 import type { EmailTemplate } from "@/generated/prisma/enums";
 import type { Prisma, Reservation, Table } from "@/generated/prisma/client";
 import { getRestaurant, type RestaurantWithSchedule } from "./restaurantService";
@@ -29,7 +38,9 @@ type Tx = Prisma.TransactionClient;
 type ReservationWithTable = Reservation & { table: Table };
 
 /** { field: { from, to } } for the fields guests care about. */
-export type ReservationChanges = Partial<Record<"date" | "time" | "partySize" | "table", { from: unknown; to: unknown }>>;
+export type ReservationChanges = Partial<
+  Record<"date" | "time" | "partySize" | "table", { from: unknown; to: unknown }>
+>;
 
 /**
  * Public base URL for links in emails: APP_URL if set; on Vercel, the
@@ -38,7 +49,9 @@ export type ReservationChanges = Partial<Record<"date" | "time" | "partySize" | 
 const appUrl = () =>
   (
     process.env.APP_URL ||
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "") ||
     "http://localhost:3000"
   ).replace(/\/$/, "");
 
@@ -102,9 +115,12 @@ function baseVars(r: ReservationWithTable, restaurant: RestaurantWithSchedule, l
 }
 
 function summarizeChanges(changes: ReservationChanges, t: Dictionary, locale: Locale): string {
-  return (Object.entries(changes) as Array<[keyof ReservationChanges, { from: unknown; to: unknown }]>)
+  return (
+    Object.entries(changes) as Array<[keyof ReservationChanges, { from: unknown; to: unknown }]>
+  )
     .map(([field, v]) => {
-      const show = (x: unknown) => (field === "date" ? formatDate(String(x), locale, "short") : String(x));
+      const show = (x: unknown) =>
+        field === "date" ? formatDate(String(x), locale, "short") : String(x);
       return `${t.email.changeLabels[field]}: ${show(v.from)} → ${show(v.to)}`;
     })
     .join(" · ");
@@ -151,51 +167,90 @@ export async function enqueueReservationEmails(
 
   switch (event.kind) {
     case "created":
-      await enqueue(tx, "RESERVATION_CONFIRMED", [reservation.guestEmail], fmt(gt.email.confirmed.subject, vars), {
-        ...guest,
-        title: gt.email.confirmed.title,
-        preheader: fmt(gt.email.confirmed.preheader, vars),
-        intro: fmt(gt.email.confirmed.intro, vars),
-        outro: gt.email.confirmed.outro,
-      });
-      await enqueue(tx, "NEW_RESERVATION_ADMIN", admins, fmt(at.email.admin.newSubject, { date: staff.dateLabel, time: staff.time }), {
-        ...staff,
-        title: at.email.admin.newTitle,
-        preheader: `${staff.guestName} · ${staff.dateLabel} ${staff.time}`,
-        intro: at.email.admin.newIntro,
-      });
+      await enqueue(
+        tx,
+        "RESERVATION_CONFIRMED",
+        [reservation.guestEmail],
+        fmt(gt.email.confirmed.subject, vars),
+        {
+          ...guest,
+          title: gt.email.confirmed.title,
+          preheader: fmt(gt.email.confirmed.preheader, vars),
+          intro: fmt(gt.email.confirmed.intro, vars),
+          outro: gt.email.confirmed.outro,
+        },
+      );
+      await enqueue(
+        tx,
+        "NEW_RESERVATION_ADMIN",
+        admins,
+        fmt(at.email.admin.newSubject, { date: staff.dateLabel, time: staff.time }),
+        {
+          ...staff,
+          title: at.email.admin.newTitle,
+          preheader: `${staff.guestName} · ${staff.dateLabel} ${staff.time}`,
+          intro: at.email.admin.newIntro,
+        },
+      );
       break;
     case "modified":
-      await enqueue(tx, "RESERVATION_MODIFIED", [reservation.guestEmail], fmt(gt.email.modified.subject, vars), {
-        ...guest,
-        title: gt.email.modified.title,
-        preheader: fmt(gt.email.modified.preheader, vars),
-        intro: fmt(gt.email.modified.intro, vars),
-        outro: gt.email.modified.outro,
-        changesSummary: summarizeChanges(event.changes, gt, gl),
-      });
-      await enqueue(tx, "NEW_RESERVATION_ADMIN", admins, fmt(at.email.admin.modifiedSubject, vars), {
-        ...staff,
-        title: at.email.admin.modifiedTitle,
-        preheader: fmt(at.email.admin.modifiedSubject, vars),
-        intro: at.email.admin.modifiedIntro,
-        changesSummary: summarizeChanges(event.changes, at, al),
-      });
+      await enqueue(
+        tx,
+        "RESERVATION_MODIFIED",
+        [reservation.guestEmail],
+        fmt(gt.email.modified.subject, vars),
+        {
+          ...guest,
+          title: gt.email.modified.title,
+          preheader: fmt(gt.email.modified.preheader, vars),
+          intro: fmt(gt.email.modified.intro, vars),
+          outro: gt.email.modified.outro,
+          changesSummary: summarizeChanges(event.changes, gt, gl),
+        },
+      );
+      await enqueue(
+        tx,
+        "NEW_RESERVATION_ADMIN",
+        admins,
+        fmt(at.email.admin.modifiedSubject, vars),
+        {
+          ...staff,
+          title: at.email.admin.modifiedTitle,
+          preheader: fmt(at.email.admin.modifiedSubject, vars),
+          intro: at.email.admin.modifiedIntro,
+          changesSummary: summarizeChanges(event.changes, at, al),
+        },
+      );
       break;
     case "cancelled":
-      await enqueue(tx, "RESERVATION_CANCELLED", [reservation.guestEmail], fmt(gt.email.cancelled.subject, vars), {
-        ...guest,
-        title: gt.email.cancelled.title,
-        preheader: fmt(gt.email.cancelled.preheader, vars),
-        intro: fmt(event.byAdmin ? gt.email.cancelled.byAdmin : gt.email.cancelled.byClient, vars),
-        outro: fmt(gt.email.cancelled.outro, vars),
-      });
-      await enqueue(tx, "NEW_RESERVATION_ADMIN", admins, fmt(at.email.admin.cancelledSubject, vars), {
-        ...staff,
-        title: at.email.admin.cancelledTitle,
-        preheader: fmt(at.email.admin.cancelledSubject, vars),
-        intro: event.byAdmin ? at.email.admin.cancelledByAdmin : at.email.admin.cancelledByClient,
-      });
+      await enqueue(
+        tx,
+        "RESERVATION_CANCELLED",
+        [reservation.guestEmail],
+        fmt(gt.email.cancelled.subject, vars),
+        {
+          ...guest,
+          title: gt.email.cancelled.title,
+          preheader: fmt(gt.email.cancelled.preheader, vars),
+          intro: fmt(
+            event.byAdmin ? gt.email.cancelled.byAdmin : gt.email.cancelled.byClient,
+            vars,
+          ),
+          outro: fmt(gt.email.cancelled.outro, vars),
+        },
+      );
+      await enqueue(
+        tx,
+        "NEW_RESERVATION_ADMIN",
+        admins,
+        fmt(at.email.admin.cancelledSubject, vars),
+        {
+          ...staff,
+          title: at.email.admin.cancelledTitle,
+          preheader: fmt(at.email.admin.cancelledSubject, vars),
+          intro: event.byAdmin ? at.email.admin.cancelledByAdmin : at.email.admin.cancelledByClient,
+        },
+      );
       break;
   }
 }
@@ -224,7 +279,11 @@ export async function processEmailQueue(limit = 25): Promise<{ sent: number; fai
     if (!isRecipientAllowed(email.recipient)) {
       await db.emailLog.update({
         where: { id: email.id },
-        data: { status: "FAILED", attempts: EMAIL_MAX_ATTEMPTS, error: "Blocked by EMAIL_RECIPIENT_ALLOWLIST" },
+        data: {
+          status: "FAILED",
+          attempts: EMAIL_MAX_ATTEMPTS,
+          error: "Blocked by EMAIL_RECIPIENT_ALLOWLIST",
+        },
       });
       failed++;
       continue;
@@ -240,7 +299,10 @@ export async function processEmailQueue(limit = 25): Promise<{ sent: number; fai
     } catch (error) {
       // Store a short message only — never credentials or full stacks.
       const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown error";
-      await db.emailLog.update({ where: { id: email.id }, data: { status: "FAILED", error: message } });
+      await db.emailLog.update({
+        where: { id: email.id },
+        data: { status: "FAILED", error: message },
+      });
       console.error(`[email] failed to send ${email.id}: ${message}`);
       failed++;
     }
@@ -256,7 +318,9 @@ const HOUR = 60 * 60 * 1000;
  * the window don't get that reminder — the confirmation email was just sent.
  * Idempotent via reminder24hSentAt / reminder2hSentAt.
  */
-export async function scheduleReminders(now = new Date()): Promise<{ reminders24h: number; reminders2h: number }> {
+export async function scheduleReminders(
+  now = new Date(),
+): Promise<{ reminders24h: number; reminders2h: number }> {
   const restaurant = await getRestaurant();
   const counts = { reminders24h: 0, reminders2h: 0 };
 

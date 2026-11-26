@@ -22,7 +22,8 @@ export const PAGE_SIZE = 20;
  * production only for a public portfolio demo (DEMO_MODE=true). Note: anyone
  * can then sign in as admin — pair it with EMAIL_RECIPIENT_ALLOWLIST.
  */
-export const SHOW_DEMO_CREDENTIALS = process.env.NODE_ENV !== "production" || process.env.DEMO_MODE === "true";
+export const SHOW_DEMO_CREDENTIALS =
+  process.env.NODE_ENV !== "production" || process.env.DEMO_MODE === "true";
 
 /** Cache tag for the public restaurant info rendered with "use cache". */
 export const RESTAURANT_CACHE_TAG = "restaurant";

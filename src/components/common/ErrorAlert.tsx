@@ -23,7 +23,10 @@ export default function ErrorAlert({
 }) {
   if (!children && !title) return null;
   return (
-    <div role={tone === "error" ? "alert" : "status"} className={cn("rounded-md border px-4 py-3 font-ui text-sm", tones[tone], className)}>
+    <div
+      role={tone === "error" ? "alert" : "status"}
+      className={cn("font-ui rounded-md border px-4 py-3 text-sm", tones[tone], className)}
+    >
       {title && <p className="font-semibold">{title}</p>}
       {children && <div className={title ? "mt-0.5" : undefined}>{children}</div>}
     </div>

@@ -3,7 +3,11 @@ import type { Dictionary } from "./dictionaries/it";
 import { fmt } from "./format";
 
 /** Translate an API error code (AppError.code) with its params. */
-export function translateError(t: Dictionary, code: string, params: Record<string, string | number> = {}): string {
+export function translateError(
+  t: Dictionary,
+  code: string,
+  params: Record<string, string | number> = {},
+): string {
   const message = (t.errors as Record<string, string>)[code];
   return message ? fmt(message, params) : t.errors.INTERNAL_ERROR;
 }
@@ -14,7 +18,11 @@ export function translateError(t: Dictionary, code: string, params: Record<strin
  * back to a generic "invalid value".
  */
 export function translateValidation(t: Dictionary, key: string): string {
-  return (t.validation as Record<string, string>)[key] ?? (t.errors as Record<string, string>)[key] ?? t.validation.invalid;
+  return (
+    (t.validation as Record<string, string>)[key] ??
+    (t.errors as Record<string, string>)[key] ??
+    t.validation.invalid
+  );
 }
 
 export function translateFieldErrors(
@@ -22,6 +30,9 @@ export function translateFieldErrors(
   fieldErrors: Record<string, string[] | undefined>,
 ): Record<string, string[] | undefined> {
   return Object.fromEntries(
-    Object.entries(fieldErrors).map(([field, messages]) => [field, messages?.map((m) => translateValidation(t, m))]),
+    Object.entries(fieldErrors).map(([field, messages]) => [
+      field,
+      messages?.map((m) => translateValidation(t, m)),
+    ]),
   );
 }

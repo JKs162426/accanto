@@ -12,7 +12,12 @@ import {
 import type { SeatingPreference } from "@/lib/constants";
 import type { AvailabilityDTO } from "@/types";
 import type { Prisma } from "@/generated/prisma/client";
-import { getRestaurant, scheduleInputs, toSchedulingConfig, type RestaurantWithSchedule } from "./restaurantService";
+import {
+  getRestaurant,
+  scheduleInputs,
+  toSchedulingConfig,
+  type RestaurantWithSchedule,
+} from "./restaurantService";
 import { toPublicTableDTO } from "./tableService";
 
 type Tx = Prisma.TransactionClient;
@@ -85,11 +90,21 @@ export async function freeTablesFor(
   const interval = reservationInterval(date, time, toSchedulingConfig(restaurant));
   const [tables, busy] = await Promise.all([
     client.table.findMany({ where: { restaurantId: restaurant.id, deletedAt: null } }),
-    getBusyIntervals(client, restaurant.id, interval.startsAt, interval.endsAt, options.excludeReservationId),
+    getBusyIntervals(
+      client,
+      restaurant.id,
+      interval.startsAt,
+      interval.endsAt,
+      options.excludeReservationId,
+    ),
   ]);
   return {
     ...interval,
-    tables: findAvailableTables(tables, busy, { ...interval, partySize, preference: options.preference }),
+    tables: findAvailableTables(tables, busy, {
+      ...interval,
+      partySize,
+      preference: options.preference,
+    }),
   };
 }
 
@@ -124,7 +139,10 @@ export async function getAvailability(query: {
       slots: [],
       notice: {
         code: "PARTY_TOO_LARGE_CALL",
-        params: { max: restaurant.maxPartySize, phone: restaurant.phone ? ` ${restaurant.phone}` : "" },
+        params: {
+          max: restaurant.maxPartySize,
+          phone: restaurant.phone ? ` ${restaurant.phone}` : "",
+        },
       },
     };
   }
@@ -151,7 +169,10 @@ export async function getAvailability(query: {
 
   // One query for the whole service day, then count free tables per slot in memory.
   const config = toSchedulingConfig(restaurant);
-  const intervals = schedule.slots.map((s) => ({ ...s, ...reservationInterval(query.date, s.time, config) }));
+  const intervals = schedule.slots.map((s) => ({
+    ...s,
+    ...reservationInterval(query.date, s.time, config),
+  }));
   const busy = await getBusyIntervals(
     db,
     restaurant.id,
@@ -160,7 +181,12 @@ export async function getAvailability(query: {
     query.excludeReservationId,
   );
   const freeAt = (i: (typeof intervals)[number]) =>
-    findAvailableTables(tables, busy, { startsAt: i.startsAt, endsAt: i.endsAt, partySize: query.partySize, preference });
+    findAvailableTables(tables, busy, {
+      startsAt: i.startsAt,
+      endsAt: i.endsAt,
+      partySize: query.partySize,
+      preference,
+    });
 
   const result: AvailabilityResult = {
     ...base,

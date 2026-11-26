@@ -55,7 +55,15 @@ export async function listTablesWithState(now = new Date()): Promise<TableWithLi
         startsAt: { lt: endOfWindow },
       },
       orderBy: { startsAt: "asc" },
-      select: { id: true, code: true, guestName: true, time: true, partySize: true, tableId: true, startsAt: true },
+      select: {
+        id: true,
+        code: true,
+        guestName: true,
+        time: true,
+        partySize: true,
+        tableId: true,
+        startsAt: true,
+      },
     }),
   ]);
 
@@ -66,7 +74,8 @@ export async function listTablesWithState(now = new Date()): Promise<TableWithLi
     let liveState: LiveTableState = "FREE";
     if (t.status === "OUT_OF_SERVICE") liveState = "OUT_OF_SERVICE";
     else if (current) liveState = "OCCUPIED";
-    else if (next && next.startsAt.getTime() - now.getTime() <= SOON_MS) liveState = "RESERVED_SOON";
+    else if (next && next.startsAt.getTime() - now.getTime() <= SOON_MS)
+      liveState = "RESERVED_SOON";
     const pick = (r: (typeof own)[number] | null) =>
       r && { id: r.id, code: r.code, guestName: r.guestName, time: r.time, partySize: r.partySize };
     return { ...toTableDTO(t), liveState, current: pick(current), next: pick(next) };
@@ -90,10 +99,20 @@ export async function getTable(id: string) {
 
 async function assertNumberFree(restaurantId: string, number: number, exceptId?: string) {
   const clash = await db.table.findFirst({
-    where: { restaurantId, number, deletedAt: null, ...(exceptId ? { id: { not: exceptId } } : {}) },
+    where: {
+      restaurantId,
+      number,
+      deletedAt: null,
+      ...(exceptId ? { id: { not: exceptId } } : {}),
+    },
   });
   if (clash) {
-    throw new AppError(409, "TABLE_NUMBER_TAKEN", { number }, { fieldErrors: { number: ["NUMBER_IN_USE"] } });
+    throw new AppError(
+      409,
+      "TABLE_NUMBER_TAKEN",
+      { number },
+      { fieldErrors: { number: ["NUMBER_IN_USE"] } },
+    );
   }
 }
 
@@ -143,6 +162,9 @@ export async function deleteTable(id: string): Promise<{ archived: boolean }> {
     await db.table.delete({ where: { id } });
     return { archived: false };
   }
-  await db.table.update({ where: { id }, data: { deletedAt: new Date(), status: "OUT_OF_SERVICE" } });
+  await db.table.update({
+    where: { id },
+    data: { deletedAt: new Date(), status: "OUT_OF_SERVICE" },
+  });
   return { archived: true };
 }

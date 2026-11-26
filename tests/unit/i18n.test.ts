@@ -51,14 +51,18 @@ describe("messages", () => {
       "Il tavolo 5 è per massimo 4 persone.",
     );
     expect(translateError(getDictionary("en"), "TABLE_TAKEN")).toMatch(/someone has just booked/);
-    expect(translateError(getDictionary("en"), "SOMETHING_UNKNOWN")).toBe(getDictionary("en").errors.INTERNAL_ERROR);
+    expect(translateError(getDictionary("en"), "SOMETHING_UNKNOWN")).toBe(
+      getDictionary("en").errors.INTERNAL_ERROR,
+    );
   });
 
   it("turns Zod message keys into localized field errors", () => {
     const parsed = loginSchema.safeParse({ email: "nope", password: "" });
     const errors = z.flattenError(parsed.error!).fieldErrors as Record<string, string[]>;
     expect(translateFieldErrors(getDictionary("it"), errors).email).toEqual(["Email non valida"]);
-    expect(translateFieldErrors(getDictionary("en"), errors).password).toEqual(["Enter your password"]);
+    expect(translateFieldErrors(getDictionary("en"), errors).password).toEqual([
+      "Enter your password",
+    ]);
   });
 });
 
@@ -67,7 +71,9 @@ describe("dictionaries", () => {
   // array length mismatches (e.g. weekdays, feature lists).
   function leaves(obj: unknown, prefix = ""): Array<[string, unknown]> {
     if (obj && typeof obj === "object") {
-      return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) => leaves(v, prefix ? `${prefix}.${k}` : k));
+      return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) =>
+        leaves(v, prefix ? `${prefix}.${k}` : k),
+      );
     }
     return [[prefix, obj]];
   }
@@ -77,7 +83,7 @@ describe("dictionaries", () => {
     const en = new Map(leaves(getDictionary("en")));
     expect([...en.keys()].sort()).toEqual([...it_.keys()].sort());
     for (const [key, value] of [...it_, ...en]) {
-      if (key.endsWith('preference.')) continue;
+      if (key.endsWith("preference.")) continue;
       expect(value, key).not.toBe("");
     }
   });

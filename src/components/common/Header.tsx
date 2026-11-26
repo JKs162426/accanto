@@ -32,12 +32,14 @@ async function UserMenu() {
         </LocaleLink>
       )}
       <LocaleLink href="/profile" className={buttonClasses("inverse-ghost", "sm")}>
-        <span className="flex size-6 items-center justify-center rounded-full bg-gold text-caption font-semibold text-primary-strong">
+        <span className="bg-gold text-caption text-primary-strong flex size-6 items-center justify-center rounded-full font-semibold">
           {user.name.charAt(0).toUpperCase()}
         </span>
         <span className="max-w-32 truncate">{user.name.split(" ")[0]}</span>
       </LocaleLink>
-      <LogoutButton className={buttonClasses("inverse-ghost", "sm", "text-cream/70")}>{t.nav.logout}</LogoutButton>
+      <LogoutButton className={buttonClasses("inverse-ghost", "sm", "text-cream/70")}>
+        {t.nav.logout}
+      </LogoutButton>
     </div>
   );
 }
@@ -45,7 +47,7 @@ async function UserMenu() {
 export default async function Header() {
   const { t } = await getI18n();
   return (
-    <header className="sticky top-0 z-30 border-b-2 border-gold/60 bg-primary text-cream shadow-card">
+    <header className="border-gold/60 bg-primary text-cream shadow-card sticky top-0 z-30 border-b-2">
       <div className="relative mx-auto flex h-[4.5rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <LocaleLink href="/" aria-label={t.nav.home}>
           <Logo tone="light" />
