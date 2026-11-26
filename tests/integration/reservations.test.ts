@@ -112,6 +112,60 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
     expect(couple.slots.some((s) => s.free > 0)).toBe(true);
   });
 
+  describe("concurrent changes to the same booking", () => {
+    // Table 2 at 20:00 is unused by the tests above. Each round books it,
+    // races two operations, checks the result, then deletes the booking so
+    // the next round starts clean and the rounds don't count towards the
+    // client's hourly booking limit.
+    const ROUNDS = 5;
+    const book = async () => {
+      const table2 = (await db.table.findFirstOrThrow({ where: { number: 2, deletedAt: null } })).id;
+      const r = await createReservation({ ...input("20:00"), tableId: table2 }, client);
+      created.push(r.id);
+      return r;
+    };
+    const history = (reservationId: string) =>
+      db.reservationHistory.findMany({ where: { reservationId }, orderBy: { timestamp: "asc" } });
+
+    it("cancels only once when two cancellations race", async () => {
+      for (let i = 0; i < ROUNDS; i++) {
+        const r = await book();
+        const results = await Promise.allSettled([cancelReservation(r.id, client), cancelReservation(r.id, client)]);
+        const failed = results.filter((x): x is PromiseRejectedResult => x.status === "rejected");
+        expect(failed).toHaveLength(1);
+        expect(failed[0].reason).toMatchObject({ code: "NOT_CANCELLABLE" });
+        const cancelled = (await history(r.id)).filter((h) => h.action === "CANCELLED");
+        expect(cancelled).toHaveLength(1);
+        await db.reservation.delete({ where: { id: r.id } });
+      }
+    });
+
+    it("never edits a booking after a racing cancellation", async () => {
+      for (let i = 0; i < ROUNDS; i++) {
+        const r = await book();
+        const [cancel, update] = await Promise.allSettled([
+          cancelReservation(r.id, client),
+          updateReservation(r.id, { partySize: 3 }, client),
+        ]);
+        expect(cancel.status).toBe("fulfilled");
+        const final = await db.reservation.findUniqueOrThrow({ where: { id: r.id } });
+        expect(final.status).toBe("CANCELLED");
+        const actions = (await history(r.id)).map((h) => h.action);
+        // Either the edit ran first (CREATED, UPDATED, CANCELLED) or it was
+        // rejected because the booking was already cancelled.
+        if (update.status === "fulfilled") {
+          expect(actions).toEqual(["CREATED", "UPDATED", "CANCELLED"]);
+          expect(final.partySize).toBe(3);
+        } else {
+          expect(update.reason).toMatchObject({ code: "NOT_EDITABLE" });
+          expect(actions).toEqual(["CREATED", "CANCELLED"]);
+          expect(final.partySize).toBe(2);
+        }
+        await db.reservation.delete({ where: { id: r.id } });
+      }
+    });
+  });
+
   it("cancelling frees the table", async () => {
     const theirs = await db.reservation.findFirstOrThrow({ where: { id: { in: created }, clientId: other.id } });
     await cancelReservation(theirs.id, other);

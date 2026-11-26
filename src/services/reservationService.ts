@@ -51,6 +51,8 @@ export function toReservationDTO(r: ReservationWithTable, viewer?: Pick<SessionU
 
 // ─── Concurrency ───────────────────────────────────────────────────────
 
+const TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 };
+
 /**
  * Runs `fn` in a transaction holding a Postgres advisory lock per affected
  * service day. This is what prevents double bookings: two requests that both
@@ -61,14 +63,30 @@ export function toReservationDTO(r: ReservationWithTable, viewer?: Pick<SessionU
  * taken in sorted order so two multi-day updates can't deadlock.
  */
 async function withBookingLock<T>(restaurantId: string, dates: string[], fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return db.$transaction(async (tx) => {
+    await lockBookingDays(tx, restaurantId, dates);
+    return fn(tx);
+  }, TX_OPTIONS);
+}
+
+async function lockBookingDays(tx: Tx, restaurantId: string, dates: string[]) {
   const keys = [...new Set(dates)].sort().map((d) => `booking:${restaurantId}:${d}`);
-  return db.$transaction(
-    async (tx) => {
-      for (const key of keys) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
-      return fn(tx);
-    },
-    { maxWait: 10_000, timeout: 15_000 },
-  );
+  for (const key of keys) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
+}
+
+/**
+ * Re-reads a reservation under a row lock (`FOR UPDATE`), so the status checks
+ * and the write that follows see the same version. Without it, a cancel and an
+ * edit racing on one booking could each act on a stale copy: double
+ * cancellations, or an edit saved onto a booking that was just cancelled.
+ * Callers take this row lock *before* any day lock; nothing takes them in the
+ * opposite order, so the two can't deadlock.
+ */
+async function lockReservation(tx: Tx, id: string): Promise<ReservationWithTable> {
+  await tx.$executeRaw`SELECT 1 FROM "Reservation" WHERE id = ${id} FOR UPDATE`;
+  const reservation = await tx.reservation.findUnique({ where: { id }, include: { table: true } });
+  if (!reservation) throw notFound("RESERVATION_NOT_FOUND");
+  return reservation;
 }
 
 async function uniqueCode(tx: Tx): Promise<string> {
@@ -321,35 +339,39 @@ export async function updateReservation(
   actor: SessionUser,
 ): Promise<ReservationWithTable> {
   const isAdmin = actor.role === "ADMIN";
-  const before = await loadForActor(id, actor);
+  await loadForActor(id, actor); // 404 for missing or foreign ids, before any lock
   const restaurant = await getRestaurant();
 
-  if (!isAdmin) {
-    if (before.status !== "CONFIRMED") {
-      throw new AppError(409, "NOT_EDITABLE");
+  return db.$transaction(async (tx) => {
+    // Every check below runs on the locked, current row (see lockReservation).
+    const before = await lockReservation(tx, id);
+    if (!isAdmin) {
+      if (before.status !== "CONFIRMED") {
+        throw new AppError(409, "NOT_EDITABLE");
+      }
+      if (before.startsAt <= new Date()) {
+        throw new AppError(409, "ALREADY_STARTED");
+      }
+    } else if (before.status === "CANCELLED") {
+      throw new AppError(409, "NOT_EDITABLE_CANCELLED");
     }
-    if (before.startsAt <= new Date()) {
-      throw new AppError(409, "ALREADY_STARTED");
+
+    const date = input.date ?? fromDbDate(before.date);
+    const time = input.time ?? before.time;
+    const partySize = input.partySize ?? before.partySize;
+    const requestedTable = "tableId" in input ? input.tableId : undefined;
+    const slotChanged = date !== fromDbDate(before.date) || time !== before.time;
+    const seatingChanged = slotChanged || partySize !== before.partySize || (requestedTable && requestedTable !== before.tableId);
+
+    if (slotChanged) assertBookableSlot(restaurant, date, time);
+    if (partySize > restaurant.maxPartySize && !isAdmin) {
+      throw new AppError(422, "PARTY_TOO_LARGE", { max: restaurant.maxPartySize });
     }
-  } else if (before.status === "CANCELLED") {
-    throw new AppError(409, "NOT_EDITABLE_CANCELLED");
-  }
 
-  const date = input.date ?? fromDbDate(before.date);
-  const time = input.time ?? before.time;
-  const partySize = input.partySize ?? before.partySize;
-  const requestedTable = "tableId" in input ? input.tableId : undefined;
-  const slotChanged = date !== fromDbDate(before.date) || time !== before.time;
-  const seatingChanged = slotChanged || partySize !== before.partySize || (requestedTable && requestedTable !== before.tableId);
+    const { startsAt, endsAt } = reservationInterval(date, time, toSchedulingConfig(restaurant));
 
-  if (slotChanged) assertBookableSlot(restaurant, date, time);
-  if (partySize > restaurant.maxPartySize && !isAdmin) {
-    throw new AppError(422, "PARTY_TOO_LARGE", { max: restaurant.maxPartySize });
-  }
-
-  const { startsAt, endsAt } = reservationInterval(date, time, toSchedulingConfig(restaurant));
-
-  const after = await withBookingLock(restaurant.id, [fromDbDate(before.date), date], async (tx) => {
+    // Day locks come after the row lock, and use the row's current date.
+    await lockBookingDays(tx, restaurant.id, [fromDbDate(before.date), date]);
     let tableId = requestedTable ?? before.tableId;
     if (seatingChanged) {
       try {
@@ -408,23 +430,24 @@ export async function updateReservation(
       if (!isAdmin) await notifyAdmins(tx, "RESERVATION_MODIFIED", updated);
     }
     return updated;
-  });
-  return after;
+  }, TX_OPTIONS);
 }
 
 // ─── Cancel ────────────────────────────────────────────────────────────
 
 export async function cancelReservation(id: string, actor: SessionUser): Promise<ReservationWithTable> {
   const isAdmin = actor.role === "ADMIN";
-  const before = await loadForActor(id, actor);
-  if (before.status !== "CONFIRMED") {
-    throw new AppError(409, "NOT_CANCELLABLE");
-  }
-  if (!isAdmin && before.startsAt <= new Date()) {
-    throw new AppError(409, "ALREADY_STARTED");
-  }
+  await loadForActor(id, actor); // 404 for missing or foreign ids, before any lock
   const restaurant = await getRestaurant();
   return db.$transaction(async (tx) => {
+    // Checked on the locked, current row, so two racing cancels can't both pass.
+    const before = await lockReservation(tx, id);
+    if (before.status !== "CONFIRMED") {
+      throw new AppError(409, "NOT_CANCELLABLE");
+    }
+    if (!isAdmin && before.startsAt <= new Date()) {
+      throw new AppError(409, "ALREADY_STARTED");
+    }
     const updated = await tx.reservation.update({
       where: { id },
       data: { status: "CANCELLED", cancelledAt: new Date() },
