@@ -285,7 +285,7 @@ Client body: `{ date?, time?, partySize?, notes?, guestPhone? }` (at least one f
 
 Admin body: also `tableId?: string`, `status?: "CONFIRMED" | "ATTENDED" | "NO_SHOW"`, `internalNotes?: string | null`, `guestName?: string`
 
-Responses: `200 { reservation }` · `400` · `401` · `404` · `409` · `422`
+Responses: `200 { reservation }` · `400` · `401` · `404` · `409` (`NOT_EDITABLE`, `NOT_EDITABLE_CANCELLED`, `ALREADY_STARTED`, `TABLE_TAKEN`, `NO_AVAILABILITY`) · `422`
 
 ```bash
 curl -X PATCH http://localhost:3000/api/reservations/cmwxuxlbz0000vrqftujyhyob -b cookies.txt \
@@ -301,7 +301,7 @@ curl -X PATCH http://localhost:3000/api/reservations/cmwxuxlbz0000vrqftujyhyob -
 
 Cancels a booking. Bookings are never deleted.
 
-Responses: `200 { reservation }` (status `CANCELLED`) · `401` · `404` · `409 NOT_CANCELLABLE`
+Responses: `200 { reservation }` (status `CANCELLED`) · `401` · `404` · `409 NOT_CANCELLABLE` (already cancelled or no longer confirmed) or `ALREADY_STARTED`
 
 ```json
 { "error": { "code": "NOT_CANCELLABLE", "message": "This booking can no longer be cancelled." } }

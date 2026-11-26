@@ -26,6 +26,16 @@ Browser ──► proxy.ts ──► Page (Server Component) ──► services/
 
 **Alternative considered:** an `EXCLUDE USING gist (tableId WITH =, tstzrange(startsAt, endsAt) WITH &&)` constraint. It is stronger, but needs the `btree_gist` extension and does not work on the local `prisma dev` database.
 
+### Concurrent changes to one booking
+
+Cancelling or editing a booking starts by locking its row (`SELECT … FOR UPDATE`) inside the transaction and reading it again. All status checks run on that locked copy. If a cancel and an edit, or two cancels, arrive at once, the second waits for the first to commit and then sees the real state:
+
+- A second cancel gets `409 NOT_CANCELLABLE`, so there is only one history entry and one set of cancellation emails.
+- An edit that arrives after a cancel gets `409 NOT_EDITABLE` (`NOT_EDITABLE_CANCELLED` for admins) instead of changing a cancelled booking.
+- An edit takes its day locks after the row lock, using the booking's current date.
+- Row locks always come before day locks, and nothing takes them in the other order, so they cannot deadlock.
+- `tests/integration/reservations.test.ts` races two cancels, and a cancel against an edit.
+
 ### Time zones
 
 - The guest picks date and time in the **restaurant's local time** (`Restaurant.timezone`). They are stored as `date` (`@db.Date`) and `time` (`"HH:mm"`), which is what the UI shows.
