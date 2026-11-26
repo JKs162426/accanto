@@ -1,45 +1,46 @@
-# Instalación y entorno
+# Setup and environment
 
-## 1. Dependencias
-
-```bash
-npm install   # el postinstall ejecuta `prisma generate`
-```
-
-El cliente de Prisma se genera en `src/generated/prisma/` (fuera de git). Regenéralo con `npx prisma generate` cada vez que cambie `prisma/schema.prisma`.
-
-## 2. Base de datos
-
-### Opción A: `prisma dev` (sin Docker)
+## 1. Dependencies
 
 ```bash
-npm run db:start      # arranca una instancia local llamada "accanto-local"
-npx prisma dev ls     # muestra la URL TCP (postgres://postgres:postgres@localhost:PUERTO/template1?sslmode=disable)
+npm install   # postinstall runs `prisma generate`
 ```
 
-En `.env.local`:
+The Prisma client is generated in `src/generated/prisma/`, which is not in git. Run `npx prisma generate` again whenever `prisma/schema.prisma` changes.
+
+## 2. Database
+
+### Option A: `prisma dev` (no Docker)
+
+```bash
+npm run db:start      # starts a local instance named "accanto-local" and prints its URL
+```
+
+The URL looks like `postgres://postgres:postgres@localhost:<port>/template1?sslmode=disable`. Put it in `.env.local`:
 
 ```env
-DATABASE_URL="postgres://postgres:postgres@localhost:51218/template1?sslmode=disable"
-DATABASE_POOL_MAX="1"   # prisma dev solo admite una sesión simultánea
+DATABASE_URL="<the URL printed by db:start>"
+DATABASE_POOL_MAX="1"   # prisma dev accepts one session at a time
 ```
 
-`npm run db:stop` la detiene; los datos se conservan entre reinicios.
+`npm run db:stop` stops it. The data survives restarts.
 
-### Opción B: PostgreSQL propio
+### Option B: your own PostgreSQL
 
-Basta con cualquier PostgreSQL 14 o superior (Homebrew, Docker, Neon…). Pon su URL en `DATABASE_URL` y no definas `DATABASE_POOL_MAX`.
+Any PostgreSQL 14 or later works (Homebrew, Docker, Neon…). Put its URL in `DATABASE_URL` and leave `DATABASE_POOL_MAX` empty.
 
-### Migraciones y datos
+### Migrations and test data
 
 ```bash
-npm run db:migrate   # prisma migrate dev + generate
-npm run db:seed      # fixtures; BORRA reservas, mesas, notificaciones y emails
+npx prisma migrate deploy   # applies the migrations in prisma/migrations/
+npm run db:seed             # test data; DELETES reservations, tables, notifications and emails
 ```
 
-Para cambiar el schema, edita `prisma/schema.prisma` y ejecuta `npm run db:migrate -- --name descripcion_del_cambio`. Las migraciones se versionan en `prisma/migrations/`.
+To change the schema, edit `prisma/schema.prisma` and run `npm run db:migrate -- --name describe_the_change`. Migrations are committed in `prisma/migrations/`.
 
-## 3. Secretos
+`npm run db:migrate` runs `prisma migrate dev`, which needs a shadow database. The `prisma dev` URL cannot provide one, so the command fails there with `P3005` and leaves the database half-migrated. Create new migrations against your own PostgreSQL (Option B). Use `migrate deploy` to apply them to `prisma dev`.
+
+## 3. Secrets
 
 ```bash
 openssl rand -base64 32   # AUTH_SECRET
@@ -48,19 +49,21 @@ openssl rand -hex 16      # CRON_SECRET
 
 ## 4. Emails
 
-| Entorno    | Configuración                                                              |
-| ---------- | -------------------------------------------------------------------------- |
-| Desarrollo | Nada: se imprimen en la consola de `npm run dev` (📧 …)                    |
-| Resend     | `RESEND_API_KEY` y un `EMAIL_FROM` de un dominio verificado                |
-| SMTP/Gmail | `EMAIL_HOST=smtp.gmail.com`, `EMAIL_PORT=587`, `EMAIL_USER` y una *app password* de Google |
+| Environment | Configuration                                                                                              |
+| ----------- | ---------------------------------------------------------------------------------------------------------- |
+| Development | Leave `RESEND_API_KEY` and `EMAIL_HOST` empty. Emails print in the `npm run dev` console (📧 …).           |
+| Resend      | `RESEND_API_KEY` and an `EMAIL_FROM` on a verified domain.                                                 |
+| SMTP/Gmail  | `EMAIL_HOST=smtp.gmail.com`, `EMAIL_PORT=587`, `EMAIL_USER` and a Google app password in `EMAIL_PASSWORD`. |
 
-Para probar los recordatorios en local:
+`.env.example` sets `EMAIL_HOST` to Gmail. Clear it in development, or the app tries to send through SMTP.
+
+To run the reminders and the email queue locally:
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/emails
 ```
 
-También puedes usar el botón "Procesar ahora" en **Admin → Ajustes**.
+You can also use the "Process now" button in **Admin → Settings**.
 
 ## 5. Tests
 
@@ -68,35 +71,36 @@ También puedes usar el botón "Procesar ahora" en **Admin → Ajustes**.
 npm test
 ```
 
-- `tests/unit/`: lógica pura (franjas, solapes, zonas horarias, validación, plantillas). No necesita base de datos.
-- `tests/integration/`: se ejecuta contra `DATABASE_URL` (con el seed cargado) y verifica que dos peticiones simultáneas no reservan la misma mesa, la propiedad de las reservas, la reasignación de mesa y la cancelación. Limpia lo que crea. Para saltarlo: `SKIP_DB_TESTS=1 npm test`.
+- `tests/unit/`: pure logic (slots, overlaps, time zones, validation, templates). No database needed.
+- `tests/integration/`: runs against `DATABASE_URL` with the seed loaded. It checks that two simultaneous requests cannot book the same table, plus ownership, table reassignment and cancellation. It cleans up what it creates. Skip it with `SKIP_DB_TESTS=1 npm test`.
 
-## 6. Despliegue (Vercel)
+## 6. Deployment (Vercel)
 
-1. **Proyecto:** `vercel link --yes --project accanto` crea el proyecto y lo conecta al repo de GitHub. A partir de ahí, cada push a `main` despliega en producción.
-2. **Base de datos (Neon, Fráncfort):**
+1. **Project:** `vercel link --yes --project accanto` creates the project and connects the GitHub repo. From then on, every push to `main` deploys to production.
+2. **Database (Neon, Frankfurt):**
    ```bash
    vercel integration add neon --plan free_v3 -m region=fra1 -m auth=false -e production --no-env-pull
    ```
-   Así se crean `DATABASE_URL` (con pooler) y `DATABASE_URL_UNPOOLED` (directa, para migraciones). `--no-env-pull` evita que la CLI sobrescriba tu `.env.local`. Las funciones están fijadas en `fra1` en `vercel.json`, junto a la base de datos.
+   This creates `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (direct, for migrations). `--no-env-pull` stops the CLI from overwriting your `.env.local`. `vercel.json` pins the functions to `fra1`, next to the database.
 3. **Variables:**
-   - Secretos: `AUTH_SECRET` y `CRON_SECRET`, con `--sensitive`.
-   - Email: `EMAIL_FROM`, `RESEND_API_KEY`, `ADMIN_NOTIFICATION_EMAIL` y `EMAIL_RECIPIENT_ALLOWLIST`.
-   - `APP_URL` es opcional: en Vercel se usa el dominio de producción del proyecto.
-4. **Migrar y sembrar (una vez, antes del primer build):** el build prerenderiza la landing y necesita los datos del restaurante.
+   - Secrets: `AUTH_SECRET` and `CRON_SECRET`, added with `--sensitive`.
+   - Email: `EMAIL_FROM`, `RESEND_API_KEY`, `ADMIN_NOTIFICATION_EMAIL` and `EMAIL_RECIPIENT_ALLOWLIST`.
+   - `APP_URL` is optional. On Vercel it defaults to the project's production domain.
+4. **Migrate and seed (once, before the first build).** The build prerenders the home page and needs the restaurant data.
    ```bash
-   vercel env pull /ruta/fuera/del/repo/prod.env --environment=production
-   # exporta DATABASE_URL y DATABASE_URL_UNPOOLED de ese archivo, y luego:
+   vercel env pull /path/outside/the/repo/prod.env --environment=production
+   # export DATABASE_URL and DATABASE_URL_UNPOOLED from that file, then:
    npx prisma migrate deploy
    NODE_ENV=production SEED_FORCE=1 SEED_ADMIN_PASSWORD=... SEED_CLIENT_PASSWORD=... npx tsx prisma/seed.ts
    ```
-   En producción, el seed exige contraseñas propias: las de desarrollo son públicas, porque están en el repo.
-5. **Desplegar:** haz `git push` a `main`. El build (`npm run vercel-build`) aplica las migraciones pendientes antes de `next build`.
-6. **Recordatorios cada 15 min (opcional):** en Vercel Hobby los crons solo pueden ser diarios. Añade los secretos `APP_URL` y `CRON_SECRET` en GitHub para el workflow `.github/workflows/email-cron.yml`.
+   In production the seed requires your own passwords (admin at least 12 characters, client at least 8). The development passwords are public because they are in the repo.
+5. **Deploy:** `git push` to `main`. The build (`npm run vercel-build`) applies pending migrations before `next build`.
+6. **Reminders every 15 min (optional):** Vercel Hobby only allows daily crons. Add the `APP_URL` and `CRON_SECRET` secrets on GitHub for the `.github/workflows/email-cron.yml` workflow.
 
-## Problemas habituales
+## Common problems
 
-- **`AUTH_SECRET is missing or shorter than 32 characters`**: genera uno con openssl.
-- **`El restaurante no está configurado`**: falta ejecutar `npm run db:seed`.
-- **Errores de transacción con `prisma dev`**: comprueba que `DATABASE_POOL_MAX="1"`.
-- **Los tipos `PageProps`/`LayoutProps` no existen**: ejecuta `npx next typegen`; `next dev` y `next build` también los generan.
+- **`AUTH_SECRET is missing or shorter than 32 characters`:** generate one with `openssl`.
+- **503 `NOT_CONFIGURED` ("The restaurant isn't set up yet"):** run `npm run db:seed`.
+- **`P3005 The database schema is not empty` on `npm run db:migrate`:** see the note in [section 2](#migrations-and-test-data). On a new database, use `npx prisma migrate deploy`.
+- **Transaction errors with `prisma dev`:** check that `DATABASE_POOL_MAX="1"`.
+- **`PageProps` / `LayoutProps` types are missing:** run `npx next typegen`. `next dev` and `next build` also generate them.

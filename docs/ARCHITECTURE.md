@@ -1,128 +1,134 @@
-# Arquitectura
+# Architecture
 
-## Capas
+## Layers
 
 ```
-Navegador ──► proxy.ts ──► Page (Server Component) ──► services/* ──► Prisma ──► PostgreSQL
-    │                         ▲
-    └── fetch ──► app/api/*/route.ts ──┘   (Zod en la entrada, handle() en la salida)
+Browser ──► proxy.ts ──► Page (Server Component) ──► services/* ──► Prisma ──► PostgreSQL
+   │                         ▲
+   └── fetch ──► app/api/*/route.ts ──┘   (Zod on input, handle() on output)
 ```
 
-- **`services/`** contiene toda la lógica de negocio y es la única capa que habla con la base de datos. Cada función recibe el usuario que actúa y comprueba ella misma el rol o la propiedad, así que la seguridad no depende de la UI ni de la ruta.
-- **`lib/scheduling.ts`** es la lógica pura de horarios: franjas, cierres, solapes y selección de mesa. No tiene dependencias, y la usan el servidor, el cliente (para sugerir días abiertos) y los tests.
-- **Lectura:** las páginas son Server Components que llaman a los servicios directamente.
-- **Escritura:** los formularios cliente llaman a la API REST y después hacen `router.refresh()`. La API REST también es el contrato para otros consumidores (móvil, integraciones).
-- **SWR** se usa donde el dato cambia sin que el usuario haga nada: la disponibilidad (polling cada 30 s), el estado de las mesas y las notificaciones del admin.
+- **`services/`** holds all business logic and is the only layer that talks to the database. Each function receives the acting user and checks role or ownership itself. Security does not depend on the UI or the route.
+- **`lib/scheduling.ts`** is the pure scheduling logic: slots, closures, overlaps and table choice. It has no dependencies. The server, the client (to suggest open days) and the tests all use it.
+- **Reads:** pages are Server Components that call the services directly.
+- **Writes:** client forms call the REST API, then `router.refresh()`. The REST API is also the contract for other consumers (mobile, integrations).
+- **SWR** is used where data changes without user action: availability (polled every 30 s), table status and admin notifications.
 
-## Puntos críticos
+## Critical points
 
-### Dobles reservas
+### Double bookings
 
-`reservationService` comprueba la disponibilidad e inserta dentro de una transacción que primero toma un **advisory lock de Postgres por día de servicio** (`pg_advisory_xact_lock(hashtext('booking:<restaurante>:<fecha>'))`). Si dos peticiones intentan reservar la misma mesa a la vez, la segunda espera a que la primera confirme, ve su reserva y recibe un `409 TABLE_TAKEN`.
+`reservationService` checks availability and inserts inside one transaction. The transaction first takes a **Postgres advisory lock per service day** (`pg_advisory_xact_lock(hashtext('booking:<restaurant>:<date>'))`). If two requests try to book the same table at once, the second waits for the first to commit, sees its booking and gets `409 TABLE_TAKEN`.
 
-- El bloqueo es por día y no por mesa porque la reasignación automática puede tocar cualquier mesa del día.
-- Una modificación que cambia de fecha bloquea ambos días, en orden, para que no haya interbloqueos.
-- El test `tests/integration/reservations.test.ts` lanza dos reservas concurrentes y comprueba que solo una prospera.
+- The lock is per day, not per table, because automatic reassignment can touch any table that day.
+- A change that moves a booking to another date locks both days, in order, to avoid deadlocks.
+- `tests/integration/reservations.test.ts` fires two concurrent bookings and checks that only one succeeds.
 
-**Alternativa considerada:** una restricción `EXCLUDE USING gist (tableId WITH =, tstzrange(startsAt, endsAt) WITH &&)`. Es más fuerte, pero necesita la extensión `btree_gist` y no funciona en la base de datos local de `prisma dev`.
+**Alternative considered:** an `EXCLUDE USING gist (tableId WITH =, tstzrange(startsAt, endsAt) WITH &&)` constraint. It is stronger, but needs the `btree_gist` extension and does not work on the local `prisma dev` database.
 
-### Zonas horarias
+### Time zones
 
-- El cliente elige fecha y hora en la **hora local del restaurante** (`Restaurant.timezone`). Se guardan como `date` (`@db.Date`) y `time` (`"HH:mm"`), que es lo que se muestra.
-- Además se guardan `startsAt` y `endsAt` en **UTC**, que es lo que se usa para solapes, recordatorios y ocupación en vivo.
-- La conversión (`zonedToUtc` / `utcToZoned` en `lib/helpers.ts`) usa `Intl` y está probada en los cambios de horario de verano.
-- "Hoy" siempre se calcula en la zona del restaurante, nunca en la del servidor (Vercel corre en UTC).
+- The guest picks date and time in the **restaurant's local time** (`Restaurant.timezone`). They are stored as `date` (`@db.Date`) and `time` (`"HH:mm"`), which is what the UI shows.
+- `startsAt` and `endsAt` are also stored in **UTC**. They are used for overlaps, reminders and live occupancy.
+- The conversion (`zonedToUtc` / `utcToZoned` in `lib/helpers.ts`) uses `Intl` and is tested across daylight-saving changes.
+- "Today" is always computed in the restaurant's zone, never the server's (Vercel runs in UTC).
 
-### Reglas de horario
+### Scheduling rules
 
-- **Franjas:** un turno de 12:00 a 15:00 con 2 h de duración y franjas cada 30 min ofrece 12:00, 12:30 y 13:00. La última franja empieza `cierre − duración` para que la mesa se libere antes de cerrar.
-- **Duración:** una reserva bloquea la mesa durante `turnoverMinutes` (el "tiempo mínimo entre reservas" del enunciado). Los intervalos son semiabiertos, así que una reserva de 18:00 a 20:00 y otra a las 20:00 no chocan.
-- **Disponibilidad:** solo se ofrecen mesas activas, no archivadas, con capacidad suficiente y que cumplan la preferencia, ordenadas de menor a mayor capacidad (una pareja no ocupa una mesa de 8 si hay una de 2).
+- **Slots:** a 12:00–15:00 shift with 2 h bookings and 30 min slots offers 12:00, 12:30 and 13:00. The last slot starts at `closing − duration`, so the table is free before closing.
+- **Duration:** a booking blocks its table for `turnoverMinutes` (the brief's "minimum time between bookings"). Intervals are half-open, so 18:00–20:00 and a booking at 20:00 do not clash.
+- **Availability:** only active, non-archived tables with enough seats that match the preference are offered. They are sorted from smallest to largest, so a couple does not take an 8-seat table when a 2-seat one is free.
+- **Party too large for a preference:** availability returns `preferenceCapacity` (largest table per preference). When the party is larger, the UI explains it ("VIP: up to 2") instead of showing every slot as full.
 
 ### Emails (outbox)
 
-Cada cambio inserta `EmailLog` con estado `PENDING` en la **misma transacción**: si el cambio no se confirma, no se envía ningún email. El envío ocurre en `after()`, tras responder al usuario, y en el cron.
+Every change inserts `EmailLog` rows with status `PENDING` in the **same transaction**. If the change does not commit, no email is sent. Delivery happens in `after()`, once the response is sent, and in the cron.
 
-- Cada fila se reclama con un `UPDATE … WHERE attempts = n`, así que dos procesos no envían el mismo email.
-- Hay 3 reintentos.
-- Los recordatorios se marcan (`reminder24hSentAt` / `reminder2hSentAt`) antes de encolarse, lo que los hace idempotentes.
+- Each row is claimed with `UPDATE … WHERE attempts = n`, so two workers never send the same email.
+- There are 3 attempts.
+- Reminders are marked (`reminder24hSentAt` / `reminder2hSentAt`) before they are queued, which makes them idempotent.
 
-Se descartó Bull/Redis: en un despliegue serverless añade infraestructura y la tabla de la base de datos ya da durabilidad y trazabilidad (se ve en `EmailLog`).
+Bull/Redis was ruled out. On a serverless deployment it adds infrastructure, and the database table already gives durability and an audit trail (visible in `EmailLog`).
 
-### Autenticación
+On Vercel Hobby, crons run at most once a day. `vercel.json` has a daily fallback, and `.github/workflows/email-cron.yml` calls `GET /api/emails` every 15 minutes so the 2 h reminders go out on time.
 
-- La sesión es un JWT HS256 firmado con `jose` en una cookie `httpOnly`, `SameSite=Lax` y `Secure` en producción, válida 7 días.
-- El JWT es solo un puntero: en cada petición se vuelve a leer el usuario de la base de datos (memoizado por petición con `React.cache`), así que borrar un usuario o cambiar su rol tiene efecto inmediato.
-- Contraseñas con bcrypt (coste 12). El login compara contra un hash ficticio cuando el email no existe, para que el tiempo de respuesta no revele qué emails están registrados.
-- **Sesiones versionadas:** el token lleva `User.sessionVersion`. Al cambiar la contraseña se incrementa, lo que cierra todas las demás sesiones; la actual recibe un token nuevo.
-- **CSRF:** cookie `SameSite=Lax` más tres comprobaciones en `proxy.ts` para métodos que modifican datos:
-  1. `Sec-Fetch-Site` no puede ser cross-site.
-  2. `Origin`, si existe, debe ser el propio.
-  3. Si hay cuerpo, debe ser `application/json`, algo que un `<form>` de otro sitio no puede enviar.
-- **Logout:** siempre es un POST desde un botón. La página `/logout` pide confirmación, así que un enlace externo no puede cerrar la sesión de nadie.
-- **Por qué no NextAuth:** el enunciado permitía "NextAuth.js o JWT con cookies". NextAuth v4 no está pensado para Next 16 ni Cache Components y v5 sigue en beta; con email y contraseña, una sesión propia resulta más pequeña y fácil de auditar.
+### Authentication
 
-### Next.js 16 y Cache Components
+- The session is an HS256 JWT signed with `jose`, in an `httpOnly`, `SameSite=Lax` cookie (`Secure` in production), valid for 7 days.
+- The JWT is only a pointer. The user is read from the database on every request (memoised per request with `React.cache`), so deleting a user or changing a role takes effect immediately.
+- Passwords use bcrypt (cost 12). When the email does not exist, login compares against a dummy hash, so response time does not reveal which emails are registered.
+- **Versioned sessions:** the token carries `User.sessionVersion`. A password change increments it, which signs out every other session. The current one gets a new token.
+- **CSRF:** a `SameSite=Lax` cookie plus three checks in `proxy.ts` for methods that change data:
+  1. `Sec-Fetch-Site` cannot be cross-site.
+  2. `Origin`, if present, must be our own.
+  3. A request with a body must be `application/json`, which a `<form>` on another site cannot send.
+- **Logout** is always a POST from a button. The `/logout` page asks for confirmation, so an external link cannot sign anyone out.
+- **Why not NextAuth:** the brief allowed "NextAuth.js or JWT with cookies". NextAuth v4 is not built for Next 16 or Cache Components, and v5 is still in beta. For email and password, a custom session is smaller and easier to audit.
 
-- `cacheComponents: true`: toda lectura de cookies, parámetros de URL o datos no cacheados va dentro de un `<Suspense>`. Por eso cada página es un *shell* estático (título, navegación) con el contenido dinámico en streaming (`◐ Partial Prerender` en el build).
-- La información pública del restaurante (`getCachedRestaurant`) usa `"use cache"` con `cacheTag("restaurant")` y se invalida con `revalidateTag` al guardar los ajustes.
-- `middleware.ts` ahora se llama `proxy.ts` (convención de Next 16).
-- Los Client Components que usan `usePathname()` en layouts compartidos (enlace activo del menú) están en su propio `<Suspense>`, porque en rutas `[id]` la URL solo se conoce en la petición.
+### Next.js 16 and Cache Components
 
-### Seguridad, resumen
+- `cacheComponents: true`: every read of cookies, URL parameters or uncached data sits inside a `<Suspense>`. Each page is a static shell (title, navigation) with dynamic content streamed in (`◐ Partial Prerender` in the build).
+- Public restaurant data (`getCachedRestaurant`) uses `"use cache"` with `cacheTag("restaurant")`. Saving the settings invalidates it with `revalidateTag`.
+- `middleware.ts` is now called `proxy.ts` (Next 16 convention).
+- Client Components that use `usePathname()` in shared layouts (active menu link) have their own `<Suspense>`, because on `[id]` routes the URL is only known at request time.
 
-- Zod valida en el cliente (feedback inmediato) y en el servidor (autoritativo).
-- Se autoriza en el servicio: un 404 idéntico para lo inexistente y lo ajeno, y `internalNotes`/`adminNotes` nunca llegan al cliente.
-- **Límites (en memoria, best-effort por instancia):**
-  - Login y registro: por cuenta (10 / 15 min) y por IP (20 / 15 min, solo si la plataforma informa la IP; nunca hay un cubo compartido "unknown").
-  - Disponibilidad pública: 120 / min por IP.
-  - Reservas: por usuario contra la base de datos (global).
-- **IP del cliente:** `x-vercel-forwarded-for` → `x-real-ip` → `x-forwarded-for`. En self-hosting, el proxy inverso debe sobrescribir estas cabeceras.
-- **Cuerpos:** máximo 64 KB, rechazados con 413 antes de leerse enteros.
-- **Respuestas de la API:** llevan `Cache-Control: private, no-store`.
-- **Datos públicos:** la API de disponibilidad devuelve mesas sin notas internas (`PublicTableDTO`).
-- **Emails:** las reservas de clientes notifican siempre al email de la cuenta, de modo que el formulario no permite escribir a terceros. `EMAIL_RECIPIENT_ALLOWLIST` limita los destinatarios en demos públicas.
-- **Redirecciones:** el `?next=` del login se resuelve con `URL` y se exige el mismo origen, lo que bloquea `//evil` y `/\evil`.
-- **Errores:** los inesperados devuelven un 500 genérico y el detalle solo se registra en el servidor. Las páginas convierten los 404 de servicio en la página "no encontrado", y `[lang]/error.tsx` muestra un error localizado sin detalles.
-- **Cron:** el secreto se compara en tiempo constante (`timingSafeEqual`).
-- **Reportes y CSV:** rango máximo de un año.
-- **Escapado:** las plantillas de email escapan todas las variables y el CSV neutraliza la inyección de fórmulas.
-- **Cabeceras:**
-  - CSP estática: sin *nonce*, porque es incompatible con el prerender parcial. Permite `'unsafe-inline'` solo en scripts y estilos; todo lo demás queda limitado a `'self'`, con `frame-ancestors 'none'`, `object-src 'none'` y `form-action 'self'`.
-  - HSTS en producción, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y `Cross-Origin-Opener-Policy`.
-- **Credenciales demo:** se muestran en desarrollo o con `DEMO_MODE=true`.
-- **Dependencias:** `overrides` en `package.json` fuerzan versiones parcheadas de `mysql2` y `deepmerge-ts` (usadas por la CLI de Prisma). Queda `braces`, en el plugin de ESLint y solo en desarrollo, sin versión corregida publicada.
+### Security summary
 
-### Internacionalización (IT / EN)
+- Zod validates on the client (instant feedback) and on the server (authoritative).
+- Authorization happens in the service. Missing and foreign records return the same 404. `internalNotes` and `adminNotes` never reach clients.
+- **Rate limits (in memory, best effort, per instance):**
+  - Login and register: per account (10 per 15 min) and per IP (20 per 15 min, only when the platform reports the IP; there is never a shared "unknown" bucket).
+  - Public availability: 120 per minute per IP.
+  - Reservations: 10 per user per hour, checked in the database (global).
+- **Client IP:** `x-vercel-forwarded-for` → `x-real-ip` → `x-forwarded-for`. When self-hosting, the reverse proxy must overwrite these headers.
+- **Bodies:** at most 64 KB, rejected with 413 before they are fully read.
+- **API responses** carry `Cache-Control: private, no-store`.
+- **Public data:** the availability API returns tables without internal notes (`PublicTableDTO`).
+- **Emails:** client bookings always notify the account email, so the form cannot be used to write to third parties. `EMAIL_RECIPIENT_ALLOWLIST` limits recipients on public demos.
+- **Redirects:** the login `?next=` is resolved with `URL` and must be same-origin, which blocks `//evil` and `/\evil`.
+- **Errors:** unexpected ones return a generic 500 and are only logged on the server. Pages turn service 404s into the "not found" page, and `[lang]/error.tsx` shows a localized error without details.
+- **Cron:** the secret is compared in constant time (`timingSafeEqual`).
+- **Reports and CSV:** the range is at most one year.
+- **Escaping:** email templates escape every variable, and the CSV neutralises formula injection.
+- **Headers:**
+  - Static CSP, without a nonce, because nonces are incompatible with partial prerendering. It allows `'unsafe-inline'` only for scripts and styles. Everything else is limited to `'self'`, with `frame-ancestors 'none'`, `object-src 'none'` and `form-action 'self'`.
+  - HSTS in production, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` and `Cross-Origin-Opener-Policy`.
+- **Demo accounts** are shown in development or with `DEMO_MODE=true`.
+- **Dependencies:** `overrides` in `package.json` force patched versions of `mysql2` and `deepmerge-ts` (used by the Prisma CLI). `braces` remains, in the ESLint plugin and only in development, with no fixed version published.
 
-- **Routing:** se usa un segmento raíz `app/[lang]` con `generateStaticParams` (`it`, `en`), según la guía de i18n de Next 16, así que cada página tiene un shell prerenderizado por idioma. El `proxy.ts` redirige las rutas sin idioma y recuerda la elección en la cookie `NEXT_LOCALE`.
-- **Server Components:** leen el idioma con `next/root-params` (`getI18n()` en `src/i18n/server.ts`), sin pasar `lang` por props.
-- **Client Components:** usan `useI18n()`. El diccionario se pasa una sola vez desde el layout raíz a `I18nProvider`.
-- **`LocaleLink`:** antepone el idioma a las rutas internas. `localePath` es idempotente y nunca prefija `/api`.
-- **Errores y validación:** los servicios lanzan `AppError(status, code, params)` sin texto. `handle()` traduce el código al idioma de la petición (`x-locale` → cookie → `it`). Los mensajes de Zod son claves del diccionario, de modo que el mismo schema sirve en cliente y servidor y en ambos idiomas.
-- **Datos persistidos:** `Reservation.locale` guarda el idioma en que se reservó, que se usa en los emails al cliente, incluidos recordatorios y cancelaciones hechas desde el panel en otro idioma. `Notification.data` guarda datos estructurados, y la campana compone el texto en el idioma de quien la mira.
-- **Bundle:** los componentes cliente importan solo `i18n/config`, `format` y `translate`, que no incluyen diccionarios. El diccionario activo llega por el provider.
+### Internationalization (IT / EN)
 
-## Modelo de datos
+- **Routing:** a root segment `app/[lang]` with `generateStaticParams` (`it`, `en`), following the Next 16 i18n guide, so every page has one prerendered shell per language. `proxy.ts` redirects paths without a language and remembers the choice in the `NEXT_LOCALE` cookie. `/` goes to the last chosen language, or Italian.
+- **Dictionaries:** `src/i18n/dictionaries/it.ts` is the source of truth. `en.ts` is typed against it, so a missing key is a TypeScript error. A test also checks that no key is empty.
+- **Server Components** read the language with `next/root-params` (`getI18n()` in `src/i18n/server.ts`), without passing `lang` through props.
+- **Client Components** use `useI18n()`. The root layout passes the dictionary once to `I18nProvider`.
+- **`LocaleLink`** adds the language to internal paths. `localePath` is idempotent and never prefixes `/api`.
+- **Errors and validation:** services throw `AppError(status, code, params)` with no text. `handle()` translates the code into the request language (`x-locale` → cookie → `it`). Zod messages are dictionary keys, so the same schema works on client and server, in both languages.
+- **Stored data:** `Reservation.locale` keeps the booking language. Guest emails use it, including reminders and cancellations made from the panel in another language. Staff alerts use `ADMIN_EMAIL_LOCALE`. `Notification.data` stores structured data, and the bell builds the text in the viewer's language.
+- **Email templates** in `emails/` only hold the layout. All copy comes from the dictionaries.
+- **Formats:** dates, currency and percentages use `Intl` with `it-IT` / `en-GB`. The restaurant's time zone is `Europe/Rome`.
+- **Bundle:** client components only import `i18n/config`, `format` and `translate`, which contain no dictionaries. The active dictionary arrives through the provider.
+
+## Data model
 
 ```
-Restaurant 1─* OpeningHour     (día × turno, "HH:mm")
+Restaurant 1─* OpeningHour     (weekday × shift, "HH:mm")
            1─* ClosedDate
-           1─* Table           (soft delete con deletedAt)
+           1─* Table           (soft delete with deletedAt)
            1─* Reservation *─1 Table
-User 1─* Reservation           (clientId opcional: reservas telefónicas sin cuenta)
-Reservation 1─* ReservationHistory   (acción + diff JSON + actor)
-User 1─* Notification          (campana del admin)
+User 1─* Reservation           (optional clientId: phone bookings without an account)
+Reservation 1─* ReservationHistory   (action + JSON diff + actor)
+User 1─* Notification          (admin bell)
 EmailLog                       (outbox)
 ```
 
-Respecto al enunciado:
+Compared with the brief:
 
-- `openingHours[]` se modela como tabla `OpeningHour` (un registro por día y turno). Así el admin edita turnos de almuerzo y cena por separado.
-- `Reservation` añade `startsAt`/`endsAt` (UTC), datos del invitado, `internalNotes` y las marcas de recordatorio.
-- `EmailLog` añade `status`, `attempts`, `template` y `payload` para funcionar como cola.
+- `openingHours[]` is a separate `OpeningHour` table (one row per weekday and shift), so the admin edits lunch and dinner separately.
+- `Reservation` adds `startsAt`/`endsAt` (UTC), guest details, `internalNotes` and the reminder markers.
+- `EmailLog` adds `status`, `attempts`, `template` and `payload` so it works as a queue.
 
-## Pendiente / v2
+## Pending / v2
 
-- Pagos y señal para grupos, lista de espera, reseñas.
-- Tests e2e con Playwright (la carpeta `tests/e2e/` está preparada).
+- Payments and deposits for groups, a waiting list, reviews.
+- End-to-end tests with Playwright (`tests/e2e/` is ready).

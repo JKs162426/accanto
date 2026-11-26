@@ -1,177 +1,168 @@
 # Accanto · Reservation system
 
-Bilingual (Italian / English) reservation system for **Accanto**, a fictional
-Italian restaurant in Turin. Guests check real-time table availability, book in
-four steps and manage their bookings; the staff runs tables, opening hours,
-reservations, customers and reports from its own admin panel.
+Accanto is a bilingual (Italian / English) table reservation system for a fictional Italian restaurant in Turin. Guests check live availability, book a table and manage their bookings. Staff run tables, opening hours, reservations, customers and reports from an admin panel.
 
 **Live:** <https://accanto-psi.vercel.app>
 
 [![Accanto — home page](docs/screenshot.jpg)](https://accanto-psi.vercel.app)
 
-## Highlights
+**Stack:** Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · PostgreSQL + Prisma 7 · Zod · Tailwind CSS 4 · SWR · Nodemailer · Vitest · Vercel
 
-- **Real-time availability** by date, party size and seating area, refreshed every 30 s
-- **Four-step booking** whose state lives in the URL, so it survives sign-in or sign-up
-- **My bookings** — change date, time or party size (a new table is assigned if needed) and cancel with optimistic updates
-- **Admin dashboard** — live table status, daily agenda (tables × hours), occupancy charts, customer notes and change history
-- **Reports** — occupancy, estimated revenue, frequent guests, cancellations and no-shows, with CSV export
-- **Transactional emails** with a queue: confirmation, changes, cancellation and 24 h / 2 h reminders, in the guest's language
-- **Full i18n** — the English dictionary is type-checked against the Italian one, and API errors are translated at the edge
-- **Hardened security** — CSRF protection, rate limiting, CSP and double-booking protection
+## Features
 
-## Stack
+- **Live availability** by date, party size and seating area. The list refreshes every 30 s.
+- **Four-step booking.** The selection lives in the URL, so it survives sign-in or sign-up. Each booking gets a unique code (`ACC-XXXXXX`).
+- **My bookings.** Guests change date, time or party size and cancel. If their table is no longer free, another one is assigned.
+- **Admin dashboard.** Live table status, a daily agenda (tables × hours), occupancy charts, customer notes and change history.
+- **Reports.** Occupancy, estimated revenue, frequent guests, cancellations and no-shows, with CSV export.
+- **Emails** through a queue: confirmation, change, cancellation and 24 h / 2 h reminders, in the guest's language.
+- **Full i18n.** Every page lives under `/it/...` or `/en/...`. The English dictionary is type-checked against the Italian one.
+- **Security.** CSRF checks, rate limiting, CSP and protection against double bookings.
 
-Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · PostgreSQL +
-Prisma 7 · Zod · Tailwind CSS 4 · SWR · Nodemailer · Vitest · Vercel
+## Requirements
 
----
+- Node.js 20.9 or later (the minimum for Next.js 16).
+- PostgreSQL 14 or later. For local work, `prisma dev` (included) runs one without Docker.
 
-## Documentación técnica (español)
-
-Sistema de reservas para Accanto, un restaurante italiano en **Turín**. Es bilingüe: **italiano** como idioma principal e **inglés** como alternativa, intercambiables desde el header. Los clientes buscan disponibilidad en tiempo real, reservan mesa y gestionan sus reservas; el equipo administra mesas, horarios, reservas, clientes y reportes desde un panel propio. Incluye notificaciones por email con cola y recordatorios automáticos.
-
-**Stack:** Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · PostgreSQL + Prisma 7 · Zod · Tailwind CSS 4 · SWR · Vitest.
-
-## Inicio rápido
-
-Requisitos: Node.js ≥ 20.9.
+## Setup
 
 ```bash
-npm install                 # también genera el cliente de Prisma
-npm run db:start            # Postgres local sin Docker (prisma dev); copia la URL que imprime
-cp .env.example .env.local  # rellena DATABASE_URL, AUTH_SECRET y CRON_SECRET
-npm run db:migrate          # aplica las migraciones
-npm run db:seed             # carga los datos de prueba
-npm run dev                 # http://localhost:3000
+npm install                          # also generates the Prisma client
+npm run db:start                     # local Postgres; prints its URL
+cp .env.example .env.local
 ```
 
-Con `prisma dev`, pon `DATABASE_POOL_MAX="1"` en `.env.local` (esa base de datos local solo acepta una sesión). Si prefieres tu propio PostgreSQL, usa su URL y omite `db:start`. Hay más detalle en [docs/SETUP.md](docs/SETUP.md).
+Edit `.env.local`:
 
-## Credenciales de prueba
+- `DATABASE_URL`: the URL printed by `db:start`.
+- `DATABASE_POOL_MAX="1"`: the `prisma dev` database accepts one session only.
+- `AUTH_SECRET`: run `openssl rand -base64 32`.
+- `CRON_SECRET`: run `openssl rand -hex 16`.
+- `EMAIL_HOST=""`: leave it empty to print emails to the console.
 
-| Rol     | Email                   | Contraseña       |
-| ------- | ----------------------- | ---------------- |
-| Admin   | `admin@accanto.local`   | `AdminPass123!`  |
-| Cliente | `client1@accanto.local` | `ClientPass123!` |
-| Cliente | `client2@accanto.local` | `ClientPass123!` |
+Then create the tables and load the test data:
 
-El panel está en `/it/admin/login` (o `/en/admin/login`). El seed crea:
+```bash
+npx prisma migrate deploy            # applies the migrations
+npm run db:seed                      # loads the test data
+npm run dev                          # http://localhost:3000
+```
 
-- **Horario:** de jueves a domingo, almuerzo de 12:00 a 15:00 y cena de 18:00 a 23:00. De lunes a miércoles está cerrado.
-- **Duración de cada reserva:** 2 h.
-- **12 mesas:**
-  - 1–4: interior, 4 plazas.
-  - 5–8: terraza, 4 plazas.
-  - 9–10: sala privada, 8 plazas.
-  - 11–12: VIP junto a la ventana, 2 plazas.
-- **16 reservas:** 9 en las próximas semanas y 7 en las dos últimas, con estados presente, no-show y cancelada.
+With your own PostgreSQL, put its URL in `DATABASE_URL`, skip `db:start` and leave `DATABASE_POOL_MAX` empty. [docs/SETUP.md](docs/SETUP.md) has more detail.
 
-## Idiomas (IT / EN)
+### Test accounts
 
-- **Rutas:** todas las páginas viven bajo `/it/...` y `/en/...`. La raíz `/` redirige al último idioma elegido (cookie `NEXT_LOCALE`) o, si no hay, a italiano. El selector IT | EN del header (y del sidebar del panel) cambia de idioma sin salir de la página.
-- **Textos:** están en `src/i18n/dictionaries/it.ts` (fuente de verdad) y `en.ts`. El inglés está tipado contra el italiano, así que si falta una traducción TypeScript lo marca, y un test comprueba además que no haya claves vacías.
-- **API:** los errores llegan traducidos al idioma de la página. El navegador envía `x-locale`, y los servicios lanzan códigos (`TABLE_TAKEN`…) que se traducen en el borde de la API. Las validaciones Zod usan claves (`invalidEmail`), así que el mismo schema sirve para los dos idiomas.
-- **Emails:** el cliente los recibe en el idioma en que reservó (`Reservation.locale`). Los avisos al staff van en `ADMIN_EMAIL_LOCALE` (italiano por defecto). Las plantillas HTML solo tienen la estructura; todo el texto sale de los diccionarios.
-- **Formatos:** fechas, moneda y porcentajes con `Intl`, en `it-IT` / `en-GB`. La zona horaria del restaurante es `Europe/Rome`.
+These come from the seed and only exist in development.
 
-## Funcionalidades
+| Role   | Email                   | Password         |
+| ------ | ----------------------- | ---------------- |
+| Admin  | `admin@accanto.local`   | `AdminPass123!`  |
+| Client | `client1@accanto.local` | `ClientPass123!` |
+| Client | `client2@accanto.local` | `ClientPass123!` |
 
-**Cliente**
-- Búsqueda por fecha, número de personas y preferencia (interior, terraza, ventana, privada o VIP). Cada franja horaria indica cuántas mesas quedan libres, y la lista se refresca cada 30 s.
-- Reserva en cuatro pasos. La selección vive en la URL, así que sobrevive al login o registro.
-- Al confirmar se genera un código único (`ACC-XXXXXX`) y se envía un email de confirmación.
-- "Mis reservas" (próximas y pasadas): permite modificar fecha, hora o personas (si la mesa deja de estar libre, se reasigna otra) y cancelar con actualización optimista.
-- Perfil con datos personales, preferencias de recordatorio (24 h / 2 h), cambio de contraseña e historial.
+The admin panel is at `/it/admin/login` (or `/en/admin/login`).
 
-**Administración**
-- Dashboard con reservas de hoy, la semana y el mes, ocupación en tiempo real, gráficos por hora y por día, estado de cada mesa y notificaciones de nuevas reservas.
-- Reservas en lista con búsqueda (código, cliente, email, teléfono), filtros y paginación, o en agenda del día (mesas × horas). Permite crear reservas manuales, cambiar mesa, hora o personas, marcar presente o no-show, añadir notas internas, cancelar y consultar el historial de cambios.
-- Mesas: alta, edición y baja (se archivan si tienen historial), marcado como fuera de servicio y estado en vivo.
-- Clientes: listado con búsqueda, ficha con estadísticas, historial y notas privadas.
-- Ajustes: datos del restaurante, horario semanal por turnos, días cerrados, duración de la reserva, intervalo entre horarios y antelación máxima.
-- Reportes: ocupación, ingresos estimados, clientes frecuentes, cancelaciones y no-shows, y exportación a CSV.
+The seed creates:
 
-**Emails:** confirmación, modificación, cancelación (al cliente y al admin), aviso de nueva reserva al admin y recordatorios a 24 h y 2 h. Ver [Emails](#emails).
+- **Opening hours:** Thursday to Sunday, lunch 12:00–15:00 and dinner 18:00–23:00. Closed Monday to Wednesday.
+- **Booking length:** 2 h.
+- **12 tables:** 1–4 indoors (4 seats), 5–8 terrace (4 seats), 9–10 private room (8 seats), 11–12 VIP by the window (2 seats).
+- **16 reservations:** 9 in the coming weeks and 7 in the last two weeks, with attended, no-show and cancelled states.
 
-## Scripts
+## Environment variables
 
-| Script                                   | Qué hace                                                      |
-| ---------------------------------------- | ------------------------------------------------------------- |
-| `npm run dev` / `build` / `start`        | Next.js                                                       |
-| `npm test`                               | Vitest: tests unitarios + integración contra la BD si hay `DATABASE_URL` |
-| `npm run lint` / `typecheck` / `format`  | ESLint / TypeScript / Prettier                                |
-| `npm run db:start` / `db:stop`           | Postgres local con `prisma dev`                               |
-| `npm run db:migrate`                     | Crea o aplica migraciones y regenera el cliente               |
-| `npm run db:seed`                        | Recarga los fixtures (**borra** reservas y mesas)             |
-| `npm run db:reset`                       | Resetea la BD y vuelve a sembrar                              |
-| `npm run db:studio`                      | Prisma Studio                                                 |
+See [.env.example](.env.example) for the format.
 
-## Variables de entorno
+| Variable                                                   | Required | Purpose                                                                                                  |
+| ---------------------------------------------------------- | :------: | -------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                             |   Yes    | PostgreSQL connection string used by the app.                                                            |
+| `DATABASE_URL_UNPOOLED`                                    |          | Direct connection for migrations and the seed. Falls back to `DATABASE_URL`.                             |
+| `DATABASE_POOL_MAX`                                        |          | Connections per server instance. Use `1` with `prisma dev`. Default: 5 in production, 10 in development. |
+| `AUTH_SECRET`                                              |   Yes    | Signs the session JWT. At least 32 characters.                                                           |
+| `APP_URL`                                                  |   Yes¹   | Public base URL, used for links in emails.                                                               |
+| `CRON_SECRET`                                              |   Yes    | Bearer token for `GET /api/emails` (reminders and email queue).                                          |
+| `RESEND_API_KEY`                                           |          | Sends email through Resend. Takes priority over SMTP.                                                    |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD` |          | SMTP settings for Nodemailer, used when there is no Resend key.                                          |
+| `EMAIL_FROM`                                               |          | Sender name and address.                                                                                 |
+| `ADMIN_NOTIFICATION_EMAIL`                                 |          | Recipients of staff alerts, comma-separated.                                                             |
+| `ADMIN_EMAIL_LOCALE`                                       |          | Language of staff alerts: `it` (default) or `en`.                                                        |
+| `DEMO_MODE`                                                |          | `true` shows the test accounts on the login screens in production.                                       |
+| `EMAIL_RECIPIENT_ALLOWLIST`                                |          | Only send email to these addresses or `@domains`. Recommended for public demos.                          |
 
-| Variable                    | Obligatoria | Descripción                                                                |
-| --------------------------- | :---------: | -------------------------------------------------------------------------- |
-| `DATABASE_URL`              | ✅          | Cadena de conexión de PostgreSQL                                           |
-| `DATABASE_URL_UNPOOLED`     |             | Conexión directa para migraciones y seed (Neon/Vercel la crea sola)        |
-| `DATABASE_POOL_MAX`         |             | Conexiones por instancia (`1` con `prisma dev`; por defecto 5 en producción) |
-| `AUTH_SECRET`               | ✅          | Firma el JWT de sesión, ≥ 32 caracteres (`openssl rand -base64 32`)        |
-| `APP_URL`                   | ✅          | URL pública, usada en los enlaces de los emails                            |
-| `CRON_SECRET`               | ✅          | Token Bearer de `GET /api/emails` (recordatorios y cola)                   |
-| `RESEND_API_KEY`            |             | Si existe, los emails salen por [Resend](https://resend.com)               |
-| `EMAIL_HOST` … `EMAIL_PASSWORD` |         | SMTP con Nodemailer (si no hay Resend)                                     |
-| `EMAIL_FROM`                |             | Remitente, p. ej. `Accanto <reservas@tudominio.com>`                       |
-| `ADMIN_NOTIFICATION_EMAIL`  |             | Destinatarios de los avisos al admin (separados por comas)                 |
-| `ADMIN_EMAIL_LOCALE`        |             | Idioma de los avisos al staff: `it` (por defecto) o `en`                   |
-| `DEMO_MODE`                 |             | `true` muestra las credenciales demo en producción (demo pública)          |
-| `EMAIL_RECIPIENT_ALLOWLIST` |             | Solo envía emails a estas direcciones / `@dominios` (recomendado en demos) |
+¹ On Vercel it defaults to the project's production domain.
 
-Sin Resend ni SMTP, los emails se imprimen en la consola del servidor, que es lo práctico en desarrollo.
+With no Resend key and no `EMAIL_HOST`, emails are printed to the server console.
 
-## Estructura
+## Tests and scripts
+
+```bash
+npm test             # unit tests, plus integration tests when DATABASE_URL is set
+npm run typecheck    # TypeScript
+npm run lint         # ESLint
+npm run dev          # development server
+npm run build && npm start   # production build
+```
+
+Integration tests need the seed loaded. Skip them with `SKIP_DB_TESTS=1 npm test`.
+
+| Script                         | What it does                                                      |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `npm run format`               | Prettier.                                                         |
+| `npm run db:start` / `db:stop` | Starts or stops the local `prisma dev` database.                  |
+| `npm run db:migrate`           | Creates a migration after a schema change (`prisma migrate dev`). |
+| `npm run db:seed`              | Reloads the test data. **Deletes** reservations and tables.       |
+| `npm run db:reset`             | Drops the database, reapplies migrations and seeds it.            |
+| `npm run db:studio`            | Opens Prisma Studio.                                              |
+
+## Project structure
 
 ```
-prisma/            schema, migraciones, seed
-emails/            plantillas HTML ({{variable}}, {{#bloque}}…{{/bloque}})
+prisma/            schema, migrations, seed
+emails/            HTML email layouts ({{variable}}, {{#block}}…{{/block}})
 src/
   app/
-    [lang]/        todas las páginas, por idioma (it | en); layout raíz con <html lang>
+    [lang]/        every page, per language (it | en)
       (auth)/      login, register, logout
       (client)/    reserve, my-reservations, profile
       admin/       login, unauthorized, dashboard/*
-    api/           API REST (sin prefijo de idioma)
-  i18n/            config de idiomas, diccionarios it/en y helpers de traducción
-  components/      UI: common, auth, reservations, admin, profile
+    api/           REST API (no language prefix)
+  i18n/            language config, it/en dictionaries, translation helpers
+  components/      UI: common, auth, reservations, admin, profile, home
   hooks/           useAuth, useAvailability, useReservations, useTables, useAsync
-  lib/             db, auth, session, validation (Zod), scheduling, email, helpers…
-  services/        lógica de negocio (único lugar que habla con la BD)
-  types/           DTOs compartidos
-  proxy.ts         protección de rutas + comprobación de Origin (antes "middleware")
-tests/             unit/ (lógica pura) e integration/ (contra la BD)
+  lib/             db, auth, session, validation (Zod), scheduling, email, helpers
+  services/        business logic; the only layer that talks to the database
+  types/           shared DTOs
+  proxy.ts         route protection and Origin checks (formerly "middleware")
+tests/             unit/ (pure logic) and integration/ (against the database)
 docs/              SETUP, API, ARCHITECTURE
 ```
 
-## Emails
+## Data flow
 
-Las emails no se envían dentro de la petición. Cada cambio inserta filas `PENDING` en `EmailLog` dentro de la misma transacción (patrón *outbox*). Después:
+A booking, from search to email:
 
-1. justo después de responder, `after()` procesa la cola sin bloquear al usuario;
-2. `GET /api/emails` (cron) encola los recordatorios pendientes y reintenta los fallidos (hasta 3 veces).
+1. The guest picks a date and party size. `useAvailability` calls `GET /api/reservations/availability` every 30 s.
+2. `availabilityService` reads opening hours, tables and existing bookings. `lib/scheduling.ts` works out the free slots.
+3. The guest confirms. `POST /api/reservations` validates the body with Zod and calls `reservationService`.
+4. In one transaction, the service locks the service day, checks the table is still free, saves the booking and its history, and queues the emails as `PENDING` rows in `EmailLog`.
+5. After the response is sent, `after()` delivers the queued emails. The cron call to `GET /api/emails` queues reminders and retries failures, up to 3 times.
 
-En Vercel Hobby los crons solo pueden ejecutarse una vez al día, así que `vercel.json` trae un cron diario de respaldo. Para que los recordatorios de 2 h funcionen hace falta una ejecución frecuente: el workflow `.github/workflows/email-cron.yml` llama al endpoint cada 15 minutos (requiere los secretos `APP_URL` y `CRON_SECRET` en GitHub).
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the layers and the design decisions.
 
-## Despliegue en Vercel
+## Deployment
 
-Producción: Vercel con funciones en `fra1` y Postgres de Neon en Fráncfort, creado desde la integración de Vercel. Los pasos exactos (crear el proyecto, la base de datos, las variables y la siembra inicial) están en [docs/SETUP.md](docs/SETUP.md#6-despliegue-vercel). Después, cada push a `main` despliega y aplica las migraciones pendientes.
+Production runs on Vercel (functions in `fra1`) with a Neon Postgres database in Frankfurt. [docs/SETUP.md](docs/SETUP.md#6-deployment-vercel) lists the exact steps. After the first setup, every push to `main` deploys and applies pending migrations.
 
-**Demo pública o privada:** las credenciales demo solo se muestran con `DEMO_MODE=true`. En producción el seed exige contraseñas propias (`SEED_ADMIN_PASSWORD`, `SEED_CLIENT_PASSWORD`). Con envío real de emails, define `EMAIL_RECIPIENT_ALLOWLIST` para que nadie pueda usar tu dominio para escribir a terceros.
+- **Public demo:** the test accounts only show with `DEMO_MODE=true`. In production the seed requires your own passwords (`SEED_ADMIN_PASSWORD`, `SEED_CLIENT_PASSWORD`). If real emails go out, set `EMAIL_RECIPIENT_ALLOWLIST` so nobody can use your domain to write to strangers.
+- **Reminders:** Vercel Hobby only runs crons once a day, so `vercel.json` has a daily fallback. The 2 h reminders need a more frequent call. The workflow `.github/workflows/email-cron.yml` calls the endpoint every 15 minutes. It needs the `APP_URL` and `CRON_SECRET` repository secrets.
 
-## Cómo extender
+## Extending
 
-- **Reglas de reserva** (duración, franjas, antelación): se configuran en el panel. La lógica está en `src/lib/scheduling.ts`, que es pura y tiene tests.
-- **Nuevo tipo de email:** añade el valor a `EmailTemplate` en el schema, crea la plantilla en `emails/` y regístrala en `TEMPLATE_FILES` (`src/lib/email.ts`). Después, encólala desde `emailService`.
-- **Nuevo endpoint:** el schema Zod va en `lib/validation.ts`, la lógica en un servicio y la ruta se envuelve en `handle()` con `requireApiUser`/`requireApiAdmin`.
-- **Design system:** la guía de marca "Mediterráneo" está en `src/app/globals.css`. Tiene dos capas: la paleta de marca (`--mediterranean-blue`, `--terracotta`, `--olive`…) y los tokens semánticos que usan los componentes (`bg-surface`, `text-primary`, `bg-accent`…). Tipografía: Cormorant Garamond (títulos), Crimson Text (texto) e Inter (interfaz), con la escala `text-h1`…`text-caption`. Algunos colores de marca se oscurecen un paso al usarse como texto pequeño para cumplir WCAG AA; el detalle está comentado en el propio archivo. Tailwind 4 no usa `tailwind.config.ts`: el tema se define con `@theme` en ese CSS.
-- **Nuevo idioma:** añade el código a `locales` en `src/i18n/config.ts` y crea `src/i18n/dictionaries/<código>.ts` tipado como `Dictionary`. TypeScript señala cualquier clave que falte.
-- **v2:** pagos y señales, lista de espera, reseñas y multi-restaurante (el schema ya tiene `restaurantId` en todas las entidades).
+- **Booking rules** (length, slots, booking window): set them in the admin panel. The logic is in `src/lib/scheduling.ts`, which is pure and tested.
+- **New email type:** add the value to `EmailTemplate` in the schema, add the layout to `emails/` and register it in `TEMPLATE_FILES` (`src/lib/email.ts`). Then queue it from `emailService`.
+- **New endpoint:** put the Zod schema in `lib/validation.ts` and the logic in a service. Wrap the route in `handle()` and use `requireApiUser` or `requireApiAdmin`.
+- **New language:** add the code to `locales` in `src/i18n/config.ts`. Create `src/i18n/dictionaries/<code>.ts` typed as `Dictionary`. TypeScript flags every missing key.
+- **Design system:** the "Mediterraneo" brand guide is in `src/app/globals.css`. It has brand colours (`--mediterranean-blue`, `--terracotta`, `--olive`…) and semantic tokens for components (`bg-surface`, `text-primary`, `bg-accent`…). Fonts: Cormorant Garamond (headings), Crimson Text (body) and Inter (UI). Tailwind 4 has no `tailwind.config.ts`: the theme is defined with `@theme` in that file.
+- **Ideas for v2:** payments and deposits, a waiting list, reviews and multiple restaurants. Every entity already has a `restaurantId`.
 
-Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/API.md](docs/API.md).
+The REST API is documented in [docs/API.md](docs/API.md).
