@@ -11,7 +11,8 @@ const enabled = Boolean(process.env.DATABASE_URL) && process.env.SKIP_DB_TESTS !
 
 describe.skipIf(!enabled)("reservations (database)", async () => {
   const { db } = await import("@/lib/db");
-  const { createReservation, cancelReservation, updateReservation } = await import("@/services/reservationService");
+  const { createReservation, cancelReservation, updateReservation } =
+    await import("@/services/reservationService");
   const { getAvailability } = await import("@/services/availabilityService");
   const { addDays, dayOfWeek, todayIn } = await import("@/lib/helpers");
   const { AppError } = await import("@/lib/errors");
@@ -19,7 +20,13 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
   const created: string[] = [];
   const startedAt = new Date();
   let date = "";
-  let client: { id: string; email: string; name: string; phone: string | null; role: "CLIENT" | "ADMIN" };
+  let client: {
+    id: string;
+    email: string;
+    name: string;
+    phone: string | null;
+    role: "CLIENT" | "ADMIN";
+  };
   let other: typeof client;
   let tableId = "";
 
@@ -29,7 +36,10 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
     date = addDays(todayIn(restaurant.timezone), 35);
     while (![4, 5, 6, 0].includes(dayOfWeek(date))) date = addDays(date, 1);
     const pick = (email: string) =>
-      db.user.findUniqueOrThrow({ where: { email }, select: { id: true, email: true, name: true, phone: true, role: true } });
+      db.user.findUniqueOrThrow({
+        where: { email },
+        select: { id: true, email: true, name: true, phone: true, role: true },
+      });
     client = await pick("client1@accanto.local");
     other = await pick("client2@accanto.local");
     tableId = (await db.table.findFirstOrThrow({ where: { number: 1, deletedAt: null } })).id;
@@ -43,8 +53,14 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
   });
 
   const input = (time: string) => ({
-    date, time, partySize: 2, tableId,
-    guestName: "Test", guestEmail: "test@example.com", guestPhone: null, notes: null,
+    date,
+    time,
+    partySize: 2,
+    tableId,
+    guestName: "Test",
+    guestEmail: "test@example.com",
+    guestPhone: null,
+    notes: null,
   });
 
   it("never double-books a table when two requests race", async () => {
@@ -61,7 +77,9 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
   });
 
   it("rejects an overlapping slot on the same table but allows back-to-back", async () => {
-    await expect(createReservation(input("21:00"), other)).rejects.toMatchObject({ code: "TABLE_TAKEN" });
+    await expect(createReservation(input("21:00"), other)).rejects.toMatchObject({
+      code: "TABLE_TAKEN",
+    });
     const next = await createReservation({ ...input("18:00") }, other);
     created.push(next.id);
     expect(next.tableId).toBe(tableId);
@@ -72,26 +90,41 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
     expect(availability.tables?.some((t) => t.id === tableId)).toBe(false);
     // Client bookings email the account holder, whatever the form said.
     const emails = await db.emailLog.count({
-      where: { template: "RESERVATION_CONFIRMED", recipient: { in: [client.email, other.email] }, timestamp: { gt: new Date(Date.now() - 60_000) } },
+      where: {
+        template: "RESERVATION_CONFIRMED",
+        recipient: { in: [client.email, other.email] },
+        timestamp: { gt: new Date(Date.now() - 60_000) },
+      },
     });
     expect(emails).toBeGreaterThan(0);
   });
 
   it("only lets the owner modify, and moves to a free table when needed", async () => {
-    const mine = await db.reservation.findFirstOrThrow({ where: { id: { in: created }, clientId: client.id } });
-    await expect(updateReservation(mine.id, { partySize: 3 }, other)).rejects.toMatchObject({ status: 404 });
+    const mine = await db.reservation.findFirstOrThrow({
+      where: { id: { in: created }, clientId: client.id },
+    });
+    await expect(updateReservation(mine.id, { partySize: 3 }, other)).rejects.toMatchObject({
+      status: 404,
+    });
     // 18:00 on table 1 is taken by `other`; moving there must pick another table.
     const moved = await updateReservation(mine.id, { time: "18:00" }, client);
     expect(moved.tableId).not.toBe(tableId);
-    const history = await db.reservationHistory.count({ where: { reservationId: mine.id, action: "UPDATED" } });
+    const history = await db.reservationHistory.count({
+      where: { reservationId: mine.id, action: "UPDATED" },
+    });
     expect(history).toBe(1);
   });
 
   it("sends client confirmations only to the account email (no emailing third parties)", async () => {
-    const r = await createReservation({ ...input("13:00"), guestEmail: "victim@example.com" }, client);
+    const r = await createReservation(
+      { ...input("13:00"), guestEmail: "victim@example.com" },
+      client,
+    );
     created.push(r.id);
     expect(r.guestEmail).toBe(client.email);
-    const toVictim = await db.emailLog.count({ where: { recipient: "victim@example.com", timestamp: { gt: new Date(Date.now() - 60_000) } } });
+    const toVictim = await db.emailLog.count({
+      where: { recipient: "victim@example.com", timestamp: { gt: new Date(Date.now() - 60_000) } },
+    });
     expect(toVictim).toBe(0);
   });
 
@@ -119,7 +152,8 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
     // client's hourly booking limit.
     const ROUNDS = 5;
     const book = async () => {
-      const table2 = (await db.table.findFirstOrThrow({ where: { number: 2, deletedAt: null } })).id;
+      const table2 = (await db.table.findFirstOrThrow({ where: { number: 2, deletedAt: null } }))
+        .id;
       const r = await createReservation({ ...input("20:00"), tableId: table2 }, client);
       created.push(r.id);
       return r;
@@ -130,7 +164,10 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
     it("cancels only once when two cancellations race", async () => {
       for (let i = 0; i < ROUNDS; i++) {
         const r = await book();
-        const results = await Promise.allSettled([cancelReservation(r.id, client), cancelReservation(r.id, client)]);
+        const results = await Promise.allSettled([
+          cancelReservation(r.id, client),
+          cancelReservation(r.id, client),
+        ]);
         const failed = results.filter((x): x is PromiseRejectedResult => x.status === "rejected");
         expect(failed).toHaveLength(1);
         expect(failed[0].reason).toMatchObject({ code: "NOT_CANCELLABLE" });
@@ -167,7 +204,9 @@ describe.skipIf(!enabled)("reservations (database)", async () => {
   });
 
   it("cancelling frees the table", async () => {
-    const theirs = await db.reservation.findFirstOrThrow({ where: { id: { in: created }, clientId: other.id } });
+    const theirs = await db.reservation.findFirstOrThrow({
+      where: { id: { in: created }, clientId: other.id },
+    });
     await cancelReservation(theirs.id, other);
     const again = await createReservation(input("18:00"), client);
     created.push(again.id);

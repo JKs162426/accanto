@@ -68,7 +68,11 @@ export function toRestaurantDTO(r: RestaurantWithSchedule) {
       opensAt,
       closesAt,
     })),
-    closedDates: r.closedDates.map((c) => ({ id: c.id, date: fromDbDate(c.date), reason: c.reason })),
+    closedDates: r.closedDates.map((c) => ({
+      id: c.id,
+      date: fromDbDate(c.date),
+      reason: c.reason,
+    })),
   };
 }
 

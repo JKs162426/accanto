@@ -5,7 +5,11 @@ import {
   createReservationSchema,
   reservationListQuerySchema,
 } from "@/lib/validation";
-import { createReservation, listReservations, toReservationDTO } from "@/services/reservationService";
+import {
+  createReservation,
+  listReservations,
+  toReservationDTO,
+} from "@/services/reservationService";
 import { processEmailQueue } from "@/services/emailService";
 import { requestLocale } from "@/i18n";
 
@@ -14,7 +18,10 @@ export const GET = handle(async (request) => {
   const user = await requireApiUser();
   const filters = parseQuery(request, reservationListQuerySchema);
   const result = await listReservations(filters, user);
-  return NextResponse.json({ ...result, items: result.items.map((r) => toReservationDTO(r, user)) });
+  return NextResponse.json({
+    ...result,
+    items: result.items.map((r) => toReservationDTO(r, user)),
+  });
 });
 
 export const POST = handle(async (request) => {

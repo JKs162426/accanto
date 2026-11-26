@@ -5,13 +5,16 @@ export function Spinner({ className, label = "…" }: { className?: string; labe
     <span
       role="status"
       aria-label={label}
-      className={cn("inline-block size-5 animate-spin rounded-full border-2 border-primary border-r-transparent", className)}
+      className={cn(
+        "border-primary inline-block size-5 animate-spin rounded-full border-2 border-r-transparent",
+        className,
+      )}
     />
   );
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-lg bg-surface-muted", className)} aria-hidden />;
+  return <div className={cn("bg-surface-muted animate-pulse rounded-lg", className)} aria-hidden />;
 }
 
 /** Generic page-level fallback for Suspense boundaries. */

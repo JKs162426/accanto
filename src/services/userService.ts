@@ -15,8 +15,13 @@ const publicUserSelect = {
   role: true,
 } as const satisfies Prisma.UserSelect;
 
-export async function registerUser(input: RegisterInput): Promise<SessionUser & { sessionVersion: number }> {
-  const existing = await db.user.findUnique({ where: { email: input.email }, select: { id: true } });
+export async function registerUser(
+  input: RegisterInput,
+): Promise<SessionUser & { sessionVersion: number }> {
+  const existing = await db.user.findUnique({
+    where: { email: input.email },
+    select: { id: true },
+  });
   if (existing) {
     throw new AppError(409, "EMAIL_TAKEN", {}, { fieldErrors: { email: ["EMAIL_TAKEN"] } });
   }
@@ -50,7 +55,14 @@ export async function authenticate(
   const user = await db.user.findUnique({ where: { email } });
   const ok = await verifyPassword(password, user?.password ?? DUMMY_HASH);
   if (!user || !ok) return null;
-  return { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role, sessionVersion: user.sessionVersion };
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    phone: user.phone,
+    role: user.role,
+    sessionVersion: user.sessionVersion,
+  };
 }
 
 export async function getProfile(userId: string) {
@@ -76,7 +88,12 @@ export async function changePassword(userId: string, currentPassword: string, ne
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) throw notFound("USER_NOT_FOUND");
   if (!(await verifyPassword(currentPassword, user.password))) {
-    throw new AppError(400, "WRONG_PASSWORD", {}, { fieldErrors: { currentPassword: ["WRONG_PASSWORD"] } });
+    throw new AppError(
+      400,
+      "WRONG_PASSWORD",
+      {},
+      { fieldErrors: { currentPassword: ["WRONG_PASSWORD"] } },
+    );
   }
   // Bumping sessionVersion signs out every other device holding an old token.
   const updated = await db.user.update({
@@ -99,7 +116,10 @@ export interface ClientSummary {
   lastVisit: Date | null;
 }
 
-export async function listClients(params: { q?: string; page?: number }): Promise<Paginated<ClientSummary>> {
+export async function listClients(params: {
+  q?: string;
+  page?: number;
+}): Promise<Paginated<ClientSummary>> {
   const page = params.page ?? 1;
   const where: Prisma.UserWhereInput = { role: "CLIENT" };
   if (params.q) {
@@ -151,7 +171,13 @@ export async function listClients(params: { q?: string; page?: number }): Promis
 export async function getClient(id: string) {
   const user = await db.user.findUnique({
     where: { id },
-    select: { ...publicUserSelect, adminNotes: true, createdAt: true, remind24h: true, remind2h: true },
+    select: {
+      ...publicUserSelect,
+      adminNotes: true,
+      createdAt: true,
+      remind24h: true,
+      remind2h: true,
+    },
   });
   if (!user) throw notFound("CLIENT_NOT_FOUND");
   const stats = await db.reservation.groupBy({
@@ -159,7 +185,10 @@ export async function getClient(id: string) {
     where: { clientId: id },
     _count: { _all: true },
   });
-  const byStatus = Object.fromEntries(stats.map((s) => [s.status, s._count._all])) as Record<string, number>;
+  const byStatus = Object.fromEntries(stats.map((s) => [s.status, s._count._all])) as Record<
+    string,
+    number
+  >;
   return { ...user, stats: byStatus };
 }
 

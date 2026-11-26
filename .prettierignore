@@ -3,3 +3,5 @@ node_modules
 src/generated
 prisma/migrations
 package-lock.json
+# Email layouts: inline styles must stay single-line for email clients.
+emails

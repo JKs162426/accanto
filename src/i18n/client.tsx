@@ -13,8 +13,19 @@ interface I18nValue {
 const I18nContext = createContext<I18nValue | null>(null);
 
 /** Provided once by the [lang] root layout; client components read it with useI18n(). */
-export function I18nProvider({ lang, t, children }: { lang: Locale; t: Dictionary; children: ReactNode }) {
-  const value = useMemo<I18nValue>(() => ({ lang, t, href: (path) => localePath(lang, path) }), [lang, t]);
+export function I18nProvider({
+  lang,
+  t,
+  children,
+}: {
+  lang: Locale;
+  t: Dictionary;
+  children: ReactNode;
+}) {
+  const value = useMemo<I18nValue>(
+    () => ({ lang, t, href: (path) => localePath(lang, path) }),
+    [lang, t],
+  );
   return <I18nContext value={value}>{children}</I18nContext>;
 }
 

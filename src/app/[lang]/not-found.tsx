@@ -8,9 +8,9 @@ export default async function NotFound() {
   return (
     <SiteShell>
       <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <p className="font-display text-7xl font-bold text-accent-text">404</p>
+        <p className="font-display text-accent-text text-7xl font-bold">404</p>
         <h1 className="text-h3">{copy.title}</h1>
-        <p className="max-w-sm text-body-lg text-muted">{copy.text}</p>
+        <p className="text-body-lg text-muted max-w-sm">{copy.text}</p>
         <ButtonLink href="/">{copy.cta}</ButtonLink>
       </div>
     </SiteShell>

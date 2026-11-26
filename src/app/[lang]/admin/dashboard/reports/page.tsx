@@ -15,7 +15,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.admin.reports.title };
 }
 
-async function Reports({ searchParams }: { searchParams: PageProps<"/[lang]/admin/dashboard/reports">["searchParams"] }) {
+async function Reports({
+  searchParams,
+}: {
+  searchParams: PageProps<"/[lang]/admin/dashboard/reports">["searchParams"];
+}) {
   const { lang } = await getI18n();
   await requireAdmin(lang);
   const [sp, restaurant] = await Promise.all([searchParams, getRestaurant()]);

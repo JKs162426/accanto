@@ -58,25 +58,37 @@ export default function ReportsChart({
     <figure className="min-w-0">
       <figcaption className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <span>
-          <span className="block font-display text-h4 leading-tight font-semibold text-primary">{title}</span>
-          {description && <span className="block text-sm text-muted">{description}</span>}
+          <span className="font-display text-h4 text-primary block leading-tight font-semibold">
+            {title}
+          </span>
+          {description && <span className="text-muted block text-sm">{description}</span>}
         </span>
-        <button type="button" onClick={() => setShowTable((s) => !s)} className="text-caption font-medium text-primary underline-offset-2 hover:underline">
+        <button
+          type="button"
+          onClick={() => setShowTable((s) => !s)}
+          className="text-caption text-primary font-medium underline-offset-2 hover:underline"
+        >
           {showTable ? t.admin.chart.showChart : t.admin.chart.showTable}
         </button>
       </figcaption>
 
       {data.length === 0 || max === 0 ? (
-        <p className="flex items-center justify-center rounded-md bg-surface-raised text-sm text-muted" style={{ height }}>
+        <p
+          className="bg-surface-raised text-muted flex items-center justify-center rounded-md text-sm"
+          style={{ height }}
+        >
           {t.admin.chart.empty}
         </p>
       ) : showTable ? (
-        <div className="max-h-72 overflow-y-auto rounded-md border border-line bg-surface-raised">
+        <div className="border-line bg-surface-raised max-h-72 overflow-y-auto rounded-md border">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-beige-light text-left text-caption text-muted">
-              <tr><th className="px-3 py-2 font-medium">{t.admin.chart.period}</th><th className="px-3 py-2 text-right font-medium">{t.admin.chart.value}</th></tr>
+            <thead className="bg-beige-light text-caption text-muted sticky top-0 text-left">
+              <tr>
+                <th className="px-3 py-2 font-medium">{t.admin.chart.period}</th>
+                <th className="px-3 py-2 text-right font-medium">{t.admin.chart.value}</th>
+              </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-line divide-y">
               {data.map((d) => (
                 <tr key={d.label}>
                   <td className="px-3 py-1.5">{tooltipLabel(d.label)}</td>
@@ -89,9 +101,16 @@ export default function ReportsChart({
       ) : (
         <div className="flex gap-2" aria-hidden={false}>
           {/* Y axis */}
-          <div className="relative w-6 shrink-0 text-right text-[11px] text-muted tabular-nums" style={{ height }}>
+          <div
+            className="text-muted relative w-6 shrink-0 text-right text-[11px] tabular-nums"
+            style={{ height }}
+          >
             {axis.map((t) => (
-              <span key={t} className="absolute right-0" style={{ bottom: `${(t / top) * 100}%`, transform: "translateY(50%)" }}>
+              <span
+                key={t}
+                className="absolute right-0"
+                style={{ bottom: `${(t / top) * 100}%`, transform: "translateY(50%)" }}
+              >
                 {t}
               </span>
             ))}
@@ -100,9 +119,17 @@ export default function ReportsChart({
             <div className="relative" style={{ height }} onMouseLeave={() => setActive(null)}>
               {/* Grid: hairline, solid, recessive */}
               {axis.map((t) => (
-                <div key={t} className="absolute inset-x-0 h-px bg-grid" style={{ bottom: `${(t / top) * 100}%` }} />
+                <div
+                  key={t}
+                  className="bg-grid absolute inset-x-0 h-px"
+                  style={{ bottom: `${(t / top) * 100}%` }}
+                />
               ))}
-              <div className="absolute inset-0 flex items-end gap-0.5" role="list" aria-label={title}>
+              <div
+                className="absolute inset-0 flex items-end gap-0.5"
+                role="list"
+                aria-label={title}
+              >
                 {data.map((d, i) => {
                   const h = (d.value / top) * 100;
                   return (
@@ -118,24 +145,27 @@ export default function ReportsChart({
                     >
                       <span
                         className={cn(
-                          "block w-full max-w-6 rounded-t-[4px] bg-chart-1 transition-opacity",
+                          "bg-chart-1 block w-full max-w-6 rounded-t-[4px] transition-opacity",
                           active !== null && active !== i && "opacity-45",
-                          "group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-primary",
+                          "group-focus-visible:outline-primary group-focus-visible:outline-2 group-focus-visible:outline-offset-2",
                         )}
                         style={{ height: `${h}%`, minHeight: d.value > 0 ? 2 : 0 }}
                       />
                       {i === peak && active === null && (
-                        <span className="absolute text-[11px] font-medium text-foreground tabular-nums" style={{ bottom: `calc(${h}% + 4px)` }}>
+                        <span
+                          className="text-foreground absolute text-[11px] font-medium tabular-nums"
+                          style={{ bottom: `calc(${h}% + 4px)` }}
+                        >
                           {d.value}
                         </span>
                       )}
                       {active === i && (
                         <span
                           role="tooltip"
-                          className="pointer-events-none absolute z-10 -translate-y-2 rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-left text-caption whitespace-nowrap shadow-hover"
+                          className="border-line bg-surface-raised text-caption shadow-hover pointer-events-none absolute z-10 -translate-y-2 rounded-md border px-2.5 py-1.5 text-left whitespace-nowrap"
                           style={{ bottom: `${h}%` }}
                         >
-                          <span className="block text-muted">{tooltipLabel(d.label)}</span>
+                          <span className="text-muted block">{tooltipLabel(d.label)}</span>
                           <span className="font-semibold tabular-nums">{d.value}</span> {unitLabel}
                         </span>
                       )}
@@ -145,7 +175,7 @@ export default function ReportsChart({
               </div>
             </div>
             {/* X axis labels */}
-            <div className="mt-1.5 flex gap-0.5 text-[11px] text-muted">
+            <div className="text-muted mt-1.5 flex gap-0.5 text-[11px]">
               {data.map((d, i) => (
                 <span key={d.label} className="min-w-0 flex-1 truncate text-center">
                   {i % labelEvery === 0 ? formatLabel(d.label) : ""}

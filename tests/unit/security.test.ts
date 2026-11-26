@@ -8,7 +8,9 @@ const ORIGIN = "https://accanto.example";
 
 describe("safeNext (post-login redirect)", () => {
   it("keeps same-origin paths", () => {
-    expect(safeNext("/it/reserve?date=2026-10-23", "/it", ORIGIN)).toBe("/it/reserve?date=2026-10-23");
+    expect(safeNext("/it/reserve?date=2026-10-23", "/it", ORIGIN)).toBe(
+      "/it/reserve?date=2026-10-23",
+    );
   });
 
   it.each([
@@ -29,9 +31,15 @@ describe("safeNext (post-login redirect)", () => {
 
 describe("report range", () => {
   it("accepts up to a year and rejects longer or inverted ranges", () => {
-    expect(reportQuerySchema.safeParse({ from: "2026-01-01", to: "2026-12-31" }).success).toBe(true);
-    expect(reportQuerySchema.safeParse({ from: "1000-01-01", to: "2026-10-07" }).success).toBe(false);
-    expect(reportQuerySchema.safeParse({ from: "2026-10-08", to: "2026-10-07" }).success).toBe(false);
+    expect(reportQuerySchema.safeParse({ from: "2026-01-01", to: "2026-12-31" }).success).toBe(
+      true,
+    );
+    expect(reportQuerySchema.safeParse({ from: "1000-01-01", to: "2026-10-07" }).success).toBe(
+      false,
+    );
+    expect(reportQuerySchema.safeParse({ from: "2026-10-08", to: "2026-10-07" }).success).toBe(
+      false,
+    );
   });
 });
 
@@ -54,7 +62,9 @@ describe("session tokens", () => {
     const token = await signSession({ sub: "u1", role: "CLIENT", name: "Giulia", v: 3 });
     expect(await verifySession(token)).toMatchObject({ sub: "u1", role: "CLIENT", v: 3 });
     const [h, p, sig] = token.split(".");
-    const forged = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(p, "base64url").toString()), role: "ADMIN" })).toString("base64url");
+    const forged = Buffer.from(
+      JSON.stringify({ ...JSON.parse(Buffer.from(p, "base64url").toString()), role: "ADMIN" }),
+    ).toString("base64url");
     expect(await verifySession(`${h}.${forged}.${sig}`)).toBeNull();
     expect(await verifySession(`${h}.${p}.`)).toBeNull();
   });

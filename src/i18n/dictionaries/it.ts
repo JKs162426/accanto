@@ -7,7 +7,8 @@ const it = {
   meta: {
     title: "Accanto · Cucina italiana a Torino",
     titleTemplate: "%s · Accanto",
-    description: "Prenota il tuo tavolo da Accanto: pasta fresca, cucina di stagione e vini italiani nel cuore di Torino.",
+    description:
+      "Prenota il tuo tavolo da Accanto: pasta fresca, cucina di stagione e vini italiani nel cuore di Torino.",
     adminTitle: "Amministrazione",
     adminTitleTemplate: "%s · Admin Accanto",
   },
@@ -81,8 +82,20 @@ const it = {
     location: { INTERIOR: "Interno", TERRACE: "Terrazza", PRIVATE: "Sala privata" },
     tableType: { STANDARD: "Standard", PRIVATE: "Privato", VIP: "VIP" },
     tableStatus: { ACTIVE: "Attivo", OUT_OF_SERVICE: "Fuori servizio" },
-    reservationStatus: { CONFIRMED: "Confermata", ATTENDED: "Presente", NO_SHOW: "No-show", CANCELLED: "Cancellata" },
-    preference: { "": "Qualsiasi", INTERIOR: "Interno", TERRACE: "Terrazza", WINDOW: "Finestra", PRIVATE: "Privato", VIP: "VIP" },
+    reservationStatus: {
+      CONFIRMED: "Confermata",
+      ATTENDED: "Presente",
+      NO_SHOW: "No-show",
+      CANCELLED: "Cancellata",
+    },
+    preference: {
+      "": "Qualsiasi",
+      INTERIOR: "Interno",
+      TERRACE: "Terrazza",
+      WINDOW: "Finestra",
+      PRIVATE: "Privato",
+      VIP: "VIP",
+    },
     window: "Finestra",
   },
   home: {
@@ -95,9 +108,18 @@ const it = {
     ctaMine: "Le mie prenotazioni",
     houseTitle: "La casa",
     features: [
-      { title: "Pasta fresca", text: "Tirata a mano ogni mattina nella nostra cucina a vista, con farine italiane e uova di cortile." },
-      { title: "Dehors e sala privata", text: "Scegli dove sederti: sala interna, dehors, accanto alla finestra o sala privata." },
-      { title: "Prenotazione semplice", text: "Modifica o cancella con un clic. Ti ricordiamo l'appuntamento via email il giorno prima." },
+      {
+        title: "Pasta fresca",
+        text: "Tirata a mano ogni mattina nella nostra cucina a vista, con farine italiane e uova di cortile.",
+      },
+      {
+        title: "Dehors e sala privata",
+        text: "Scegli dove sederti: sala interna, dehors, accanto alla finestra o sala privata.",
+      },
+      {
+        title: "Prenotazione semplice",
+        text: "Modifica o cancella con un clic. Ti ricordiamo l'appuntamento via email il giorno prima.",
+      },
     ],
     hoursTitle: "Orari",
     closed: "Chiuso",
@@ -131,7 +153,8 @@ const it = {
     adminLead: "Riservato allo staff di Accanto.",
     backToSite: "← Torna al sito",
     unauthorizedTitle: "Non hai accesso al pannello",
-    unauthorizedText: "Il tuo account non ha permessi di amministrazione. Se pensi sia un errore, contatta il responsabile del ristorante.",
+    unauthorizedText:
+      "Il tuo account non ha permessi di amministrazione. Se pensi sia un errore, contatta il responsabile del ristorante.",
     goToSite: "Vai al sito",
     switchAccount: "Cambia account",
   },
@@ -157,9 +180,11 @@ const it = {
     upTo: "Fino a {n} persone",
     searchingTables: "Cerco tavoli liberi…",
     liveHint: "Disponibilità in tempo reale · aggiornata ogni 30 secondi.",
-    noTablesAtTime: "Nessun tavolo libero a quest'ora. Prova un altro orario o un'altra preferenza.",
+    noTablesAtTime:
+      "Nessun tavolo libero a quest'ora. Prova un altro orario o un'altra preferenza.",
     tableJustTaken: "Questo tavolo è appena stato occupato. Scegline un altro, per favore.",
-    needAccount: "Per confermare serve un account: così potrai modificare o cancellare la prenotazione quando vuoi. Manterremo la tua selezione.",
+    needAccount:
+      "Per confermare serve un account: così potrai modificare o cancellare la prenotazione quando vuoi. Manterremo la tua selezione.",
     guestName: "Nome",
     guestEmail: "Email",
     guestEmailHint: "La conferma viene inviata all'email del tuo account.",
@@ -190,7 +215,8 @@ const it = {
     viewDetail: "Vedi dettaglio",
     cancel: "Cancella",
     cancelTitle: "Cancellare la prenotazione?",
-    cancelText: "Il tavolo {table} del {date} alle {time} verrà liberato. Riceverai un'email di conferma.",
+    cancelText:
+      "Il tavolo {table} del {date} alle {time} verrà liberato. Riceverai un'email di conferma.",
     keep: "Mantieni",
     confirmCancel: "Sì, cancella",
     cancelFailed: "Impossibile cancellare la prenotazione.",
@@ -323,7 +349,12 @@ const it = {
       registeredClient: "Cliente registrato",
       viewClient: "Vedi scheda e storico",
       history: "Storico",
-      actions: { CREATED: "Creata", UPDATED: "Modificata", STATUS_CHANGED: "Cambio di stato", CANCELLED: "Cancellata" },
+      actions: {
+        CREATED: "Creata",
+        UPDATED: "Modificata",
+        STATUS_CHANGED: "Cambio di stato",
+        CANCELLED: "Cancellata",
+      },
       fields: {
         date: "data",
         time: "ora",
@@ -366,9 +397,20 @@ const it = {
       archived: "Tavolo {n} archiviato (ha uno storico).",
       deleted: "Tavolo {n} eliminato.",
       deleteTable: "Elimina tavolo",
-      deleteHint: "I tavoli con storico vengono archiviati; con prenotazioni future non si possono eliminare.",
-      states: { FREE: "Libero", OCCUPIED: "Occupato", RESERVED_SOON: "Prenotato < 1 h", OUT_OF_SERVICE: "Fuori servizio" },
-      statesCompact: { FREE: "Libero", OCCUPIED: "Occupato", RESERVED_SOON: "A breve", OUT_OF_SERVICE: "Fuori" },
+      deleteHint:
+        "I tavoli con storico vengono archiviati; con prenotazioni future non si possono eliminare.",
+      states: {
+        FREE: "Libero",
+        OCCUPIED: "Occupato",
+        RESERVED_SOON: "Prenotato < 1 h",
+        OUT_OF_SERVICE: "Fuori servizio",
+      },
+      statesCompact: {
+        FREE: "Libero",
+        OCCUPIED: "Occupato",
+        RESERVED_SOON: "A breve",
+        OUT_OF_SERVICE: "Fuori",
+      },
       form: {
         number: "Numero",
         capacity: "Capienza",
@@ -450,14 +492,20 @@ const it = {
       reasonPlaceholder: "Evento privato",
       noClosedDays: "Nessun giorno di chiusura programmato.",
       emailQueue: "Coda email",
-      emailQueueHint: "Viene elaborata automaticamente dopo ogni prenotazione e dal cron. Puoi forzarla da qui.",
+      emailQueueHint:
+        "Viene elaborata automaticamente dopo ogni prenotazione e dal cron. Puoi forzarla da qui.",
       runNow: "Elabora ora",
       workerResult: "Promemoria: {reminders} · Inviate: {sent} · Fallite: {failed}",
     },
     reports: {
       title: "Report",
       lead: "Occupazione, incassi stimati, clienti abituali, cancellazioni e no-show.",
-      presets: { d7: "7 giorni", d30: "30 giorni", month: "Questo mese", next30: "Prossimi 30 giorni" },
+      presets: {
+        d7: "7 giorni",
+        d30: "30 giorni",
+        month: "Questo mese",
+        next30: "Prossimi 30 giorni",
+      },
       from: "Dal",
       to: "Al",
       export: "Esporta CSV",
@@ -484,7 +532,8 @@ const it = {
       statusNoShow: "No-show",
       statusCancelled: "Cancellate",
       total: "Totale",
-      footnote: "Incasso previsto (incluse le confermate): {projected}. Occupazione = turni-tavolo prenotati / turni disponibili (tavoli attivi × turni per servizio).",
+      footnote:
+        "Incasso previsto (incluse le confermate): {projected}. Occupazione = turni-tavolo prenotati / turni disponibili (tavoli attivi × turni per servizio).",
     },
     notifications: {
       label: "Notifiche",
@@ -556,13 +605,16 @@ const it = {
     BEYOND_BOOKING_WINDOW: "Non è ancora possibile prenotare per quella data.",
     INVALID_TIME: "Quest'ora non è disponibile per le prenotazioni.",
     NO_SLOTS_LEFT_TODAY: "Per oggi non ci sono più orari disponibili.",
-    NO_TABLES_DAY: "Non ci sono più tavoli quel giorno con questi criteri. Prova un'altra data o preferenza.",
+    NO_TABLES_DAY:
+      "Non ci sono più tavoli quel giorno con questi criteri. Prova un'altra data o preferenza.",
     PARTY_TOO_LARGE: "Il massimo per le prenotazioni online è {max} persone.",
     PARTY_TOO_LARGE_CALL: "Per gruppi di più di {max} persone, chiamaci{phone}.",
-    PREFERENCE_TOO_SMALL: "I tavoli con questa preferenza sono per massimo {max} persone. Scegli «Qualsiasi» o un'altra preferenza.",
+    PREFERENCE_TOO_SMALL:
+      "I tavoli con questa preferenza sono per massimo {max} persone. Scegli «Qualsiasi» o un'altra preferenza.",
     TABLE_OUT_OF_SERVICE: "Il tavolo selezionato non è disponibile.",
     TABLE_TOO_SMALL: "Il tavolo {number} è per massimo {capacity} persone.",
-    TABLE_TAKEN: "Ci dispiace, qualcuno ha appena prenotato quel tavolo. Scegline un altro o cambia orario.",
+    TABLE_TAKEN:
+      "Ci dispiace, qualcuno ha appena prenotato quel tavolo. Scegline un altro o cambia orario.",
     NOT_EDITABLE: "Si possono modificare solo le prenotazioni confermate.",
     NOT_EDITABLE_CANCELLED: "La prenotazione è cancellata.",
     ALREADY_STARTED: "La prenotazione è già iniziata: contatta il ristorante.",
@@ -570,8 +622,10 @@ const it = {
     NOT_CANCELLABLE: "Questa prenotazione non si può più cancellare.",
     TABLE_NUMBER_TAKEN: "Esiste già un tavolo con il numero {number}",
     NUMBER_IN_USE: "Numero in uso",
-    CAPACITY_CONFLICT: "Ci sono {n} prenotazioni future con più persone della nuova capienza. Riassegnale prima.",
-    TABLE_HAS_RESERVATIONS: "Il tavolo ha {n} prenotazioni future. Riassegnale o cancellale prima di eliminarlo.",
+    CAPACITY_CONFLICT:
+      "Ci sono {n} prenotazioni future con più persone della nuova capienza. Riassegnale prima.",
+    TABLE_HAS_RESERVATIONS:
+      "Il tavolo ha {n} prenotazioni future. Riassegnale o cancellale prima di eliminarlo.",
     DUPLICATE_SHIFT: "Ci sono turni duplicati per lo stesso giorno",
     INVALID_RANGE: "La data iniziale è successiva a quella finale",
   },
@@ -595,7 +649,8 @@ const it = {
       subject: "Prenotazione confermata · {code}",
       preheader: "Il tuo tavolo da {restaurant} è confermato — codice {code}",
       title: "La tua prenotazione è confermata!",
-      intro: "Ciao {name}, ti aspettiamo da {restaurant}. Conserva questo codice: ti servirà se ci contatti.",
+      intro:
+        "Ciao {name}, ti aspettiamo da {restaurant}. Conserva questo codice: ti servirà se ci contatti.",
       outro: "Se i tuoi piani cambiano, puoi modificare o cancellare la prenotazione dal sito.",
     },
     modified: {
@@ -610,7 +665,8 @@ const it = {
       preheader: "La prenotazione {code} è stata cancellata",
       title: "Prenotazione cancellata",
       byClient: "Ciao {name}, abbiamo cancellato la tua prenotazione come richiesto.",
-      byAdmin: "Ciao {name}, siamo spiacenti di informarti che il ristorante ha cancellato la tua prenotazione. Per qualsiasi domanda, contattaci.",
+      byAdmin:
+        "Ciao {name}, siamo spiacenti di informarti che il ristorante ha cancellato la tua prenotazione. Per qualsiasi domanda, contattaci.",
       outro: "Speriamo di rivederti presto da {restaurant}.",
     },
     reminder24h: {
@@ -623,7 +679,8 @@ const it = {
       title: "Ci vediamo tra poco",
       intro: "Ciao {name}, ti ricordiamo che la tua prenotazione è tra circa 2 ore.",
     },
-    reminderOutro: "Non riesci a venire? Avvisaci cancellando la prenotazione per liberare il tavolo.",
+    reminderOutro:
+      "Non riesci a venire? Avvisaci cancellando la prenotazione per liberare il tavolo.",
     admin: {
       newSubject: "Nuova prenotazione · {date} {time}",
       newTitle: "Nuova prenotazione",
@@ -639,7 +696,21 @@ const it = {
     changeLabels: { date: "data", time: "ora", partySize: "persone", table: "tavolo" },
   },
   csv: {
-    headers: ["codice", "data", "ora", "persone", "stato", "tavolo", "zona", "nome", "email", "telefono", "note", "note_interne", "creata"],
+    headers: [
+      "codice",
+      "data",
+      "ora",
+      "persone",
+      "stato",
+      "tavolo",
+      "zona",
+      "nome",
+      "email",
+      "telefono",
+      "note",
+      "note_interne",
+      "creata",
+    ],
   },
 };
 

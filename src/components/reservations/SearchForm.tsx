@@ -43,12 +43,19 @@ export default function SearchForm({
         <legend className="mb-2 text-sm font-medium">{t.reserve.date}</legend>
         <div className="flex flex-wrap items-center gap-2">
           {suggestedDates.map((d) => (
-            <button key={d} type="button" className={chip(values.date === d)} onClick={() => onChange({ date: d })}>
+            <button
+              key={d}
+              type="button"
+              className={chip(values.date === d)}
+              onClick={() => onChange({ date: d })}
+            >
               {formatDate(d, lang, "short").replace(/ \d{4}$/, "")}
               <span className="sr-only"> ({formatDate(d, lang)})</span>
             </button>
           ))}
-          <label className="sr-only" htmlFor="date">{t.reserve.otherDate}</label>
+          <label className="sr-only" htmlFor="date">
+            {t.reserve.otherDate}
+          </label>
           <input
             id="date"
             type="date"
@@ -56,10 +63,14 @@ export default function SearchForm({
             min={minDate}
             max={maxDate}
             onChange={(e) => e.target.value && onChange({ date: e.target.value })}
-            className="rounded-md border border-line bg-surface-raised px-3.5 py-1.5 font-ui text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+            className="border-line bg-surface-raised font-ui focus:border-primary focus:ring-primary rounded-md border px-3.5 py-1.5 text-sm focus:ring-1 focus:outline-none"
           />
         </div>
-        {values.date && <p className="mt-2 text-body-sm text-muted first-letter:uppercase">{formatDate(values.date, lang)}</p>}
+        {values.date && (
+          <p className="text-body-sm text-muted mt-2 first-letter:uppercase">
+            {formatDate(values.date, lang)}
+          </p>
+        )}
       </fieldset>
 
       <div className="grid gap-5 sm:grid-cols-[auto_1fr]">
@@ -68,19 +79,22 @@ export default function SearchForm({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="size-10 rounded-md border border-primary bg-surface-raised font-ui text-lg text-primary hover:bg-primary-soft disabled:opacity-40"
+              className="border-primary bg-surface-raised font-ui text-primary hover:bg-primary-soft size-10 rounded-md border text-lg disabled:opacity-40"
               onClick={() => onChange({ partySize: values.partySize - 1 })}
               disabled={values.partySize <= 1}
               aria-label={t.reserve.oneLess}
             >
               −
             </button>
-            <output className="w-10 text-center text-2xl font-semibold text-primary tabular-nums" aria-live="polite">
+            <output
+              className="text-primary w-10 text-center text-2xl font-semibold tabular-nums"
+              aria-live="polite"
+            >
               {values.partySize}
             </output>
             <button
               type="button"
-              className="size-10 rounded-md border border-primary bg-surface-raised font-ui text-lg text-primary hover:bg-primary-soft disabled:opacity-40"
+              className="border-primary bg-surface-raised font-ui text-primary hover:bg-primary-soft size-10 rounded-md border text-lg disabled:opacity-40"
               onClick={() => onChange({ partySize: values.partySize + 1 })}
               disabled={values.partySize >= maxPartySize}
               aria-label={t.reserve.oneMore}
@@ -100,13 +114,20 @@ export default function SearchForm({
                 <button
                   key={p}
                   type="button"
-                  className={chip(values.preference === p, tooSmall ? "border-dashed opacity-60" : undefined)}
+                  className={chip(
+                    values.preference === p,
+                    tooSmall ? "border-dashed opacity-60" : undefined,
+                  )}
                   aria-pressed={values.preference === p}
                   title={tooSmall ? fmt(t.reserve.maxGuests, { n: max }) : undefined}
                   onClick={() => onChange({ preference: p })}
                 >
                   {t.enums.preference[p]}
-                  {tooSmall && <span className="ml-1 text-caption">· {fmt(t.reserve.maxGuests, { n: max })}</span>}
+                  {tooSmall && (
+                    <span className="text-caption ml-1">
+                      · {fmt(t.reserve.maxGuests, { n: max })}
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -15,7 +15,7 @@ export default async function RegisterPage() {
   return (
     <Card className="p-6 sm:p-8">
       <h1 className="text-h3 font-semibold">{t.auth.registerTitle}</h1>
-      <p className="mt-1 mb-6 text-muted">{t.auth.registerLead}</p>
+      <p className="text-muted mt-1 mb-6">{t.auth.registerLead}</p>
       <Suspense fallback={<Skeleton className="h-96" />}>
         <RegisterForm />
       </Suspense>

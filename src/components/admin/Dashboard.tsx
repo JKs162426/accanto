@@ -40,7 +40,11 @@ export default function Dashboard({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label={d.today} value={data.counts.today} hint={fmt(d.covers, { n: data.counts.coversToday })} />
+        <StatCard
+          label={d.today}
+          value={data.counts.today}
+          hint={fmt(d.covers, { n: data.counts.coversToday })}
+        />
         <StatCard label={d.week} value={data.counts.week} hint={d.weekHint} />
         <StatCard label={d.month} value={data.counts.month} />
         <StatCard
@@ -52,7 +56,11 @@ export default function Dashboard({
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
-          <ReportsChart title={d.byHourToday} data={data.todayByHour} description={formatDate(data.today, lang)} />
+          <ReportsChart
+            title={d.byHourToday}
+            data={data.todayByHour}
+            description={formatDate(data.today, lang)}
+          />
         </Card>
         <Card>
           <ReportsChart
@@ -69,7 +77,10 @@ export default function Dashboard({
           <CardHeader
             title={d.todayList}
             action={
-              <LocaleLink href={`/admin/dashboard/reservations?view=day&date=${data.today}`} className={cn(linkClasses, "text-sm")}>
+              <LocaleLink
+                href={`/admin/dashboard/reservations?view=day&date=${data.today}`}
+                className={cn(linkClasses, "text-sm")}
+              >
                 {d.openAgenda}
               </LocaleLink>
             }
@@ -77,15 +88,19 @@ export default function Dashboard({
           {todayReservations.length === 0 ? (
             <EmptyState title={d.noneToday} />
           ) : (
-            <ul className="divide-y divide-line">
+            <ul className="divide-line divide-y">
               {todayReservations.map((r) => (
                 <li key={r.id}>
-                  <LocaleLink href={`/admin/dashboard/reservations/${r.id}`} className="-mx-2 flex items-center gap-3 rounded-md px-2 py-3 hover:bg-surface-raised">
-                    <span className="w-14 font-semibold text-primary tabular-nums">{r.time}</span>
+                  <LocaleLink
+                    href={`/admin/dashboard/reservations/${r.id}`}
+                    className="hover:bg-surface-raised -mx-2 flex items-center gap-3 rounded-md px-2 py-3"
+                  >
+                    <span className="text-primary w-14 font-semibold tabular-nums">{r.time}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{r.guestName}</span>
-                      <span className="block text-caption text-muted">
-                        {fmt(t.common.peopleShort, { n: r.partySize })} · {fmt(t.common.table, { n: r.table.number })}
+                      <span className="text-caption text-muted block">
+                        {fmt(t.common.peopleShort, { n: r.partySize })} ·{" "}
+                        {fmt(t.common.table, { n: r.table.number })}
                         {r.notes ? " · 📝" : ""}
                       </span>
                     </span>
@@ -100,14 +115,23 @@ export default function Dashboard({
           <CardHeader
             title={d.liveTables}
             description={d.liveHint}
-            action={<LocaleLink href="/admin/dashboard/tables" className={cn(linkClasses, "text-sm")}>{d.manage}</LocaleLink>}
+            action={
+              <LocaleLink href="/admin/dashboard/tables" className={cn(linkClasses, "text-sm")}>
+                {d.manage}
+              </LocaleLink>
+            }
           />
           <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {tables.map((x) => (
-              <li key={x.id} className="rounded-md border border-line bg-surface-raised p-2.5 text-center">
-                <p className="font-display text-xl font-bold text-primary">{x.number}</p>
+              <li
+                key={x.id}
+                className="border-line bg-surface-raised rounded-md border p-2.5 text-center"
+              >
+                <p className="font-display text-primary text-xl font-bold">{x.number}</p>
                 <LiveStateBadge state={x.liveState} compact />
-                {x.next && x.liveState !== "OCCUPIED" && <p className="mt-1 text-[11px] text-muted">{x.next.time}</p>}
+                {x.next && x.liveState !== "OCCUPIED" && (
+                  <p className="text-muted mt-1 text-[11px]">{x.next.time}</p>
+                )}
               </li>
             ))}
           </ul>

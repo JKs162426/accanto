@@ -23,18 +23,24 @@ export function useReservations() {
   }
 
   async function update(id: string, body: Body) {
-    const { reservation } = await apiFetch<{ reservation: ReservationDTO }>(`/api/reservations/${id}`, {
-      method: "PATCH",
-      body,
-    });
+    const { reservation } = await apiFetch<{ reservation: ReservationDTO }>(
+      `/api/reservations/${id}`,
+      {
+        method: "PATCH",
+        body,
+      },
+    );
     router.refresh();
     return reservation;
   }
 
   async function cancel(id: string) {
-    const { reservation } = await apiFetch<{ reservation: ReservationDTO }>(`/api/reservations/${id}`, {
-      method: "DELETE",
-    });
+    const { reservation } = await apiFetch<{ reservation: ReservationDTO }>(
+      `/api/reservations/${id}`,
+      {
+        method: "DELETE",
+      },
+    );
     router.refresh();
     return reservation;
   }

@@ -28,17 +28,25 @@ const CLIENT_PAGES = ["/my-reservations", "/profile", "/reserve/confirmation"];
  */
 function csrfCheck(request: NextRequest): NextResponse | null {
   const reject = (status: number, code: string, message: string) =>
-    NextResponse.json({ error: { code, message } }, { status, headers: { "Cache-Control": "no-store" } });
+    NextResponse.json(
+      { error: { code, message } },
+      { status, headers: { "Cache-Control": "no-store" } },
+    );
 
   const site = request.headers.get("sec-fetch-site");
-  if (site === "cross-site" || site === "same-site") return reject(403, "BAD_ORIGIN", "Cross-site request rejected");
+  if (site === "cross-site" || site === "same-site")
+    return reject(403, "BAD_ORIGIN", "Cross-site request rejected");
 
   const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) return reject(403, "BAD_ORIGIN", "Cross-origin request rejected");
+  if (origin && origin !== request.nextUrl.origin)
+    return reject(403, "BAD_ORIGIN", "Cross-origin request rejected");
 
-  const hasBody = Number(request.headers.get("content-length") ?? 0) > 0 || request.headers.has("transfer-encoding");
+  const hasBody =
+    Number(request.headers.get("content-length") ?? 0) > 0 ||
+    request.headers.has("transfer-encoding");
   const type = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
-  if (hasBody && type !== "application/json") return reject(415, "UNSUPPORTED_MEDIA_TYPE", "Only application/json is accepted");
+  if (hasBody && type !== "application/json")
+    return reject(415, "UNSUPPORTED_MEDIA_TYPE", "Only application/json is accepted");
   return null;
 }
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -69,7 +77,9 @@ export async function proxy(request: NextRequest) {
     return res;
   };
 
-  const needsSession = path.startsWith("/admin/dashboard") || CLIENT_PAGES.some((p) => path === p || path.startsWith(`${p}/`));
+  const needsSession =
+    path.startsWith("/admin/dashboard") ||
+    CLIENT_PAGES.some((p) => path === p || path.startsWith(`${p}/`));
   if (needsSession) {
     const session = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
     if (path.startsWith("/admin/dashboard")) {
@@ -89,5 +99,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Everything except Next internals and static files in /public.
-  matcher: ["/((?!_next/|favicon.ico|logo.svg|images/|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt|xml)$).*)"],
+  matcher: [
+    "/((?!_next/|favicon.ico|logo.svg|images/|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt|xml)$).*)",
+  ],
 };

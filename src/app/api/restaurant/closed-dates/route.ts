@@ -12,7 +12,10 @@ export const POST = handle(async (request) => {
   const { date, reason } = await parseBody(request, closedDateSchema);
   const closed = await addClosedDate(date, reason);
   revalidateTag(RESTAURANT_CACHE_TAG, "max");
-  return NextResponse.json({ closedDate: { id: closed.id, date, reason: closed.reason } }, { status: 201 });
+  return NextResponse.json(
+    { closedDate: { id: closed.id, date, reason: closed.reason } },
+    { status: 201 },
+  );
 });
 
 /** DELETE /api/restaurant/closed-dates?id=… */

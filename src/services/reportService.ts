@@ -1,6 +1,14 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { addDays, dayOfWeek, fromDbDate, timeToMinutes, toCsv, toDbDate, todayIn } from "@/lib/helpers";
+import {
+  addDays,
+  dayOfWeek,
+  fromDbDate,
+  timeToMinutes,
+  toCsv,
+  toDbDate,
+  todayIn,
+} from "@/lib/helpers";
 import { getDictionary, type Locale } from "@/i18n";
 import { getRestaurant, scheduleInputs, type RestaurantWithSchedule } from "./restaurantService";
 
@@ -31,14 +39,21 @@ async function reservationsBetween(restaurantId: string, from: string, to: strin
  * table can be turned floor(shift length / turnover) times per shift.
  * Occupancy = booked turns (confirmed + attended) / bookable turns.
  */
-function capacityTurns(restaurant: RestaurantWithSchedule, activeTables: number, from: string, to: string) {
+function capacityTurns(
+  restaurant: RestaurantWithSchedule,
+  activeTables: number,
+  from: string,
+  to: string,
+) {
   const { hours, closedDates } = scheduleInputs(restaurant);
   const closed = new Set(closedDates.map((c) => c.date));
   let turns = 0;
   for (let d = from; d <= to; d = addDays(d, 1)) {
     if (closed.has(d)) continue;
     for (const h of hours.filter((x) => x.dayOfWeek === dayOfWeek(d))) {
-      turns += Math.floor((timeToMinutes(h.closesAt) - timeToMinutes(h.opensAt)) / restaurant.turnoverMinutes);
+      turns += Math.floor(
+        (timeToMinutes(h.closesAt) - timeToMinutes(h.opensAt)) / restaurant.turnoverMinutes,
+      );
     }
   }
   return turns * activeTables;
@@ -53,10 +68,16 @@ function hourSeries(rows: Array<{ time: string; status: string }>): SeriesPoint[
     const hour = `${r.time.slice(0, 2)}:00`;
     counts.set(hour, (counts.get(hour) ?? 0) + 1);
   }
-  return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([label, value]) => ({ label, value }));
+  return [...counts.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([label, value]) => ({ label, value }));
 }
 
-function daySeries(rows: Array<{ date: Date; status: string }>, from: string, to: string): SeriesPoint[] {
+function daySeries(
+  rows: Array<{ date: Date; status: string }>,
+  from: string,
+  to: string,
+): SeriesPoint[] {
   const counts = new Map<string, number>();
   for (const r of rows) {
     if (r.status === "CANCELLED") continue;
@@ -64,11 +85,26 @@ function daySeries(rows: Array<{ date: Date; status: string }>, from: string, to
     counts.set(d, (counts.get(d) ?? 0) + 1);
   }
   const series: SeriesPoint[] = [];
-  for (let d = from; d <= to; d = addDays(d, 1)) series.push({ label: d, value: counts.get(d) ?? 0 });
+  for (let d = from; d <= to; d = addDays(d, 1))
+    series.push({ label: d, value: counts.get(d) ?? 0 });
   return series;
 }
 
-const CSV_KEYS = ["code", "date", "time", "party_size", "status", "table", "area", "guest_name", "guest_email", "guest_phone", "notes", "internal_notes", "created_at"];
+const CSV_KEYS = [
+  "code",
+  "date",
+  "time",
+  "party_size",
+  "status",
+  "table",
+  "area",
+  "guest_name",
+  "guest_email",
+  "guest_phone",
+  "notes",
+  "internal_notes",
+  "created_at",
+];
 
 // ─── Dashboard ─────────────────────────────────────────────────────────
 
@@ -87,7 +123,8 @@ export async function getDashboardSummary(now = new Date()) {
   const rows = await reservationsBetween(restaurant.id, rangeStart, rangeEndCandidates[2]);
 
   const count = (from: string, to: string) =>
-    rows.filter((r) => isSeated(r.status) || r.status === "NO_SHOW")
+    rows
+      .filter((r) => isSeated(r.status) || r.status === "NO_SHOW")
       .filter((r) => {
         const d = fromDbDate(r.date);
         return d >= from && d <= to;
@@ -132,23 +169,47 @@ export async function getReport(from: string, to: string) {
     db.table.count({ where: { restaurantId: restaurant.id, deletedAt: null, status: "ACTIVE" } }),
   ]);
 
-  const byStatus = { CONFIRMED: 0, ATTENDED: 0, NO_SHOW: 0, CANCELLED: 0 } as Record<string, number>;
+  const byStatus = { CONFIRMED: 0, ATTENDED: 0, NO_SHOW: 0, CANCELLED: 0 } as Record<
+    string,
+    number
+  >;
   for (const r of rows) byStatus[r.status]++;
 
   const total = rows.length;
   const booked = byStatus.CONFIRMED + byStatus.ATTENDED;
   const turns = capacityTurns(restaurant, activeTables, from, to);
   const avgSpend = Number(restaurant.avgSpendPerGuest);
-  const coversAttended = rows.filter((r) => r.status === "ATTENDED").reduce((s, r) => s + r.partySize, 0);
-  const coversExpected = rows.filter((r) => isSeated(r.status)).reduce((s, r) => s + r.partySize, 0);
+  const coversAttended = rows
+    .filter((r) => r.status === "ATTENDED")
+    .reduce((s, r) => s + r.partySize, 0);
+  const coversExpected = rows
+    .filter((r) => isSeated(r.status))
+    .reduce((s, r) => s + r.partySize, 0);
   // No-show rate only makes sense over reservations whose outcome is known.
   const resolved = byStatus.ATTENDED + byStatus.NO_SHOW;
 
-  const frequent = new Map<string, { key: string; name: string; email: string; clientId: string | null; visits: number; reservations: number }>();
+  const frequent = new Map<
+    string,
+    {
+      key: string;
+      name: string;
+      email: string;
+      clientId: string | null;
+      visits: number;
+      reservations: number;
+    }
+  >();
   for (const r of rows) {
     if (r.status === "CANCELLED") continue;
     const key = r.clientId ?? r.guestEmail;
-    const entry = frequent.get(key) ?? { key, name: r.guestName, email: r.guestEmail, clientId: r.clientId, visits: 0, reservations: 0 };
+    const entry = frequent.get(key) ?? {
+      key,
+      name: r.guestName,
+      email: r.guestEmail,
+      clientId: r.clientId,
+      visits: 0,
+      reservations: 0,
+    };
     entry.reservations++;
     if (r.status === "ATTENDED") entry.visits++;
     frequent.set(key, entry);
@@ -179,7 +240,11 @@ export async function getReport(from: string, to: string) {
 
 export type Report = Awaited<ReturnType<typeof getReport>>;
 
-export async function exportReservationsCsv(from: string, to: string, locale: Locale): Promise<string> {
+export async function exportReservationsCsv(
+  from: string,
+  to: string,
+  locale: Locale,
+): Promise<string> {
   const restaurant = await getRestaurant();
   const t = getDictionary(locale);
   const rows = await db.reservation.findMany({

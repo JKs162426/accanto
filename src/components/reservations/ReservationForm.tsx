@@ -50,18 +50,45 @@ export default function ReservationForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
-      <div className="rounded-lg border border-line bg-surface-raised p-4">
-        <p className="font-display text-h4 font-semibold text-primary first-letter:uppercase">{formatDate(draft.date, lang)}</p>
-        <p className="mt-1 text-body-sm">
-          {draft.time} · {plural(draft.partySize, t.common.people)} · {fmt(t.common.table, { n: draft.table.number })} (
-          {tableTags(t, draft.table).join(", ")})
+      <div className="border-line bg-surface-raised rounded-lg border p-4">
+        <p className="font-display text-h4 text-primary font-semibold first-letter:uppercase">
+          {formatDate(draft.date, lang)}
+        </p>
+        <p className="text-body-sm mt-1">
+          {draft.time} · {plural(draft.partySize, t.common.people)} ·{" "}
+          {fmt(t.common.table, { n: draft.table.number })} ({tableTags(t, draft.table).join(", ")})
         </p>
       </div>
       <ErrorAlert>{error}</ErrorAlert>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label={t.reserve.guestName} name="guestName" defaultValue={user.name} autoComplete="name" required error={errors.guestName} />
-        <Input label={t.reserve.guestEmail} name="guestEmail" type="email" value={user.email} readOnly aria-readonly="true" className="bg-surface-muted" error={errors.guestEmail} hint={t.reserve.guestEmailHint} />
-        <Input label={t.reserve.guestPhone} name="guestPhone" type="tel" defaultValue={user.phone ?? ""} autoComplete="tel" error={errors.guestPhone} fieldClassName="sm:col-span-2" />
+        <Input
+          label={t.reserve.guestName}
+          name="guestName"
+          defaultValue={user.name}
+          autoComplete="name"
+          required
+          error={errors.guestName}
+        />
+        <Input
+          label={t.reserve.guestEmail}
+          name="guestEmail"
+          type="email"
+          value={user.email}
+          readOnly
+          aria-readonly="true"
+          className="bg-surface-muted"
+          error={errors.guestEmail}
+          hint={t.reserve.guestEmailHint}
+        />
+        <Input
+          label={t.reserve.guestPhone}
+          name="guestPhone"
+          type="tel"
+          defaultValue={user.phone ?? ""}
+          autoComplete="tel"
+          error={errors.guestPhone}
+          fieldClassName="sm:col-span-2"
+        />
         <Textarea
           label={t.reserve.notes}
           name="notes"

@@ -21,9 +21,16 @@ async function DashboardContent() {
   const { lang } = await getI18n();
   const admin = await requireAdmin(lang);
   const summary = await getDashboardSummary();
-  const [today, tables] = await Promise.all([reservationsForDay(summary.today), listTablesWithState()]);
+  const [today, tables] = await Promise.all([
+    reservationsForDay(summary.today),
+    listTablesWithState(),
+  ]);
   return (
-    <Dashboard data={summary} todayReservations={today.map((r) => toReservationDTO(r, admin))} initialTables={tables} />
+    <Dashboard
+      data={summary}
+      todayReservations={today.map((r) => toReservationDTO(r, admin))}
+      initialTables={tables}
+    />
   );
 }
 
@@ -34,7 +41,11 @@ export default async function DashboardPage() {
       <PageHeader
         title={t.admin.dashboard.title}
         description={t.admin.dashboard.lead}
-        actions={<ButtonLink href="/admin/dashboard/reservations?new=1">{t.admin.newReservation}</ButtonLink>}
+        actions={
+          <ButtonLink href="/admin/dashboard/reservations?new=1">
+            {t.admin.newReservation}
+          </ButtonLink>
+        }
       />
       <Suspense fallback={<Loading rows={4} label={t.common.loading} />}>
         <DashboardContent />

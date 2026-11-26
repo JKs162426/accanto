@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { handle, jsonError, parseBody } from "@/lib/api";
 import { startSession } from "@/lib/auth";
-import { AUTH_ATTEMPTS_PER_ACCOUNT, AUTH_ATTEMPTS_PER_IP, AUTH_ATTEMPTS_WINDOW_MS } from "@/lib/constants";
+import {
+  AUTH_ATTEMPTS_PER_ACCOUNT,
+  AUTH_ATTEMPTS_PER_IP,
+  AUTH_ATTEMPTS_WINDOW_MS,
+} from "@/lib/constants";
 import { authLimits } from "@/lib/rateLimit";
 import { registerSchema } from "@/lib/validation";
 import { registerUser } from "@/services/userService";

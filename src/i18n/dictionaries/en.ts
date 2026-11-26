@@ -5,7 +5,8 @@ const en: Dictionary = {
   meta: {
     title: "Accanto · Italian kitchen in Turin",
     titleTemplate: "%s · Accanto",
-    description: "Book your table at Accanto: fresh pasta, seasonal cooking and Italian wines in the heart of Turin.",
+    description:
+      "Book your table at Accanto: fresh pasta, seasonal cooking and Italian wines in the heart of Turin.",
     adminTitle: "Admin",
     adminTitleTemplate: "%s · Accanto Admin",
   },
@@ -79,8 +80,20 @@ const en: Dictionary = {
     location: { INTERIOR: "Indoors", TERRACE: "Terrace", PRIVATE: "Private room" },
     tableType: { STANDARD: "Standard", PRIVATE: "Private", VIP: "VIP" },
     tableStatus: { ACTIVE: "Active", OUT_OF_SERVICE: "Out of service" },
-    reservationStatus: { CONFIRMED: "Confirmed", ATTENDED: "Attended", NO_SHOW: "No-show", CANCELLED: "Cancelled" },
-    preference: { "": "Any", INTERIOR: "Indoors", TERRACE: "Terrace", WINDOW: "Window", PRIVATE: "Private", VIP: "VIP" },
+    reservationStatus: {
+      CONFIRMED: "Confirmed",
+      ATTENDED: "Attended",
+      NO_SHOW: "No-show",
+      CANCELLED: "Cancelled",
+    },
+    preference: {
+      "": "Any",
+      INTERIOR: "Indoors",
+      TERRACE: "Terrace",
+      WINDOW: "Window",
+      PRIVATE: "Private",
+      VIP: "VIP",
+    },
     window: "Window",
   },
   home: {
@@ -93,9 +106,18 @@ const en: Dictionary = {
     ctaMine: "My bookings",
     houseTitle: "The house",
     features: [
-      { title: "Fresh pasta", text: "Rolled by hand every morning in our open kitchen, with Italian flours and free-range eggs." },
-      { title: "Terrace and private room", text: "Choose where to sit: indoors, on the terrace, by the window or in the private room." },
-      { title: "Effortless booking", text: "Change or cancel in one click. We send you a reminder the day before." },
+      {
+        title: "Fresh pasta",
+        text: "Rolled by hand every morning in our open kitchen, with Italian flours and free-range eggs.",
+      },
+      {
+        title: "Terrace and private room",
+        text: "Choose where to sit: indoors, on the terrace, by the window or in the private room.",
+      },
+      {
+        title: "Effortless booking",
+        text: "Change or cancel in one click. We send you a reminder the day before.",
+      },
     ],
     hoursTitle: "Opening hours",
     closed: "Closed",
@@ -129,7 +151,8 @@ const en: Dictionary = {
     adminLead: "For the Accanto team only.",
     backToSite: "← Back to the website",
     unauthorizedTitle: "You don't have access to the panel",
-    unauthorizedText: "Your account doesn't have admin permissions. If you think this is a mistake, contact the restaurant manager.",
+    unauthorizedText:
+      "Your account doesn't have admin permissions. If you think this is a mistake, contact the restaurant manager.",
     goToSite: "Go to the website",
     switchAccount: "Switch account",
   },
@@ -157,7 +180,8 @@ const en: Dictionary = {
     liveHint: "Live availability · refreshed every 30 seconds.",
     noTablesAtTime: "No free tables at that time. Try another time or preference.",
     tableJustTaken: "That table has just been taken. Please pick another one.",
-    needAccount: "You need an account to confirm, so you can change or cancel the booking whenever you like. We'll keep your selection.",
+    needAccount:
+      "You need an account to confirm, so you can change or cancel the booking whenever you like. We'll keep your selection.",
     guestName: "Name",
     guestEmail: "Email",
     guestEmailHint: "The confirmation goes to your account email.",
@@ -188,7 +212,8 @@ const en: Dictionary = {
     viewDetail: "View details",
     cancel: "Cancel",
     cancelTitle: "Cancel this booking?",
-    cancelText: "Table {table} on {date} at {time} will be released. You'll receive a confirmation email.",
+    cancelText:
+      "Table {table} on {date} at {time} will be released. You'll receive a confirmation email.",
     keep: "Keep it",
     confirmCancel: "Yes, cancel",
     cancelFailed: "The booking couldn't be cancelled.",
@@ -321,7 +346,12 @@ const en: Dictionary = {
       registeredClient: "Registered guest",
       viewClient: "View profile and history",
       history: "History",
-      actions: { CREATED: "Created", UPDATED: "Changed", STATUS_CHANGED: "Status change", CANCELLED: "Cancelled" },
+      actions: {
+        CREATED: "Created",
+        UPDATED: "Changed",
+        STATUS_CHANGED: "Status change",
+        CANCELLED: "Cancelled",
+      },
       fields: {
         date: "date",
         time: "time",
@@ -364,9 +394,20 @@ const en: Dictionary = {
       archived: "Table {n} archived (it has history).",
       deleted: "Table {n} deleted.",
       deleteTable: "Delete table",
-      deleteHint: "Tables with history are archived; tables with upcoming bookings can't be deleted.",
-      states: { FREE: "Free", OCCUPIED: "Occupied", RESERVED_SOON: "Booked < 1 h", OUT_OF_SERVICE: "Out of service" },
-      statesCompact: { FREE: "Free", OCCUPIED: "Busy", RESERVED_SOON: "Soon", OUT_OF_SERVICE: "Off" },
+      deleteHint:
+        "Tables with history are archived; tables with upcoming bookings can't be deleted.",
+      states: {
+        FREE: "Free",
+        OCCUPIED: "Occupied",
+        RESERVED_SOON: "Booked < 1 h",
+        OUT_OF_SERVICE: "Out of service",
+      },
+      statesCompact: {
+        FREE: "Free",
+        OCCUPIED: "Busy",
+        RESERVED_SOON: "Soon",
+        OUT_OF_SERVICE: "Off",
+      },
       form: {
         number: "Number",
         capacity: "Capacity",
@@ -448,7 +489,8 @@ const en: Dictionary = {
       reasonPlaceholder: "Private event",
       noClosedDays: "No closed days scheduled.",
       emailQueue: "Email queue",
-      emailQueueHint: "Processed automatically after every booking and by the cron. You can run it now.",
+      emailQueueHint:
+        "Processed automatically after every booking and by the cron. You can run it now.",
       runNow: "Process now",
       workerResult: "Reminders: {reminders} · Sent: {sent} · Failed: {failed}",
     },
@@ -482,7 +524,8 @@ const en: Dictionary = {
       statusNoShow: "No-shows",
       statusCancelled: "Cancelled",
       total: "Total",
-      footnote: "Projected revenue (including confirmed): {projected}. Occupancy = booked table turns / available turns (active tables × turns per service).",
+      footnote:
+        "Projected revenue (including confirmed): {projected}. Occupancy = booked table turns / available turns (active tables × turns per service).",
     },
     notifications: {
       label: "Notifications",
@@ -540,7 +583,8 @@ const en: Dictionary = {
     DATE_NOT_FOUND: "Date not found",
     INTERNAL_ERROR: "Something went wrong. Please try again.",
     RATE_LIMITED: "Too many attempts. Try again in {seconds} s.",
-    RESERVATIONS_RATE_LIMITED: "You've made too many bookings in a short time. Please try again later.",
+    RESERVATIONS_RATE_LIMITED:
+      "You've made too many bookings in a short time. Please try again later.",
     INVALID_CREDENTIALS: "Incorrect email or password",
     NOT_ADMIN: "This account doesn't have access to the admin panel",
     EMAIL_TAKEN: "An account with this email already exists",
@@ -557,7 +601,8 @@ const en: Dictionary = {
     NO_TABLES_DAY: "No tables left that day for these criteria. Try another date or preference.",
     PARTY_TOO_LARGE: "Online bookings are limited to {max} guests.",
     PARTY_TOO_LARGE_CALL: "For groups of more than {max}, please call us{phone}.",
-    PREFERENCE_TOO_SMALL: "Tables with this preference seat up to {max} guests. Choose “Any” or another preference.",
+    PREFERENCE_TOO_SMALL:
+      "Tables with this preference seat up to {max} guests. Choose “Any” or another preference.",
     TABLE_OUT_OF_SERVICE: "The selected table isn't available.",
     TABLE_TOO_SMALL: "Table {number} seats at most {capacity} guests.",
     TABLE_TAKEN: "Sorry, someone has just booked that table. Pick another one or change the time.",
@@ -568,8 +613,10 @@ const en: Dictionary = {
     NOT_CANCELLABLE: "This booking can no longer be cancelled.",
     TABLE_NUMBER_TAKEN: "A table with number {number} already exists",
     NUMBER_IN_USE: "Number in use",
-    CAPACITY_CONFLICT: "There are {n} upcoming bookings with more guests than the new capacity. Reassign them first.",
-    TABLE_HAS_RESERVATIONS: "This table has {n} upcoming bookings. Reassign or cancel them before deleting it.",
+    CAPACITY_CONFLICT:
+      "There are {n} upcoming bookings with more guests than the new capacity. Reassign them first.",
+    TABLE_HAS_RESERVATIONS:
+      "This table has {n} upcoming bookings. Reassign or cancel them before deleting it.",
     DUPLICATE_SHIFT: "There are duplicate services on the same day",
     INVALID_RANGE: "The start date is after the end date",
   },
@@ -593,7 +640,8 @@ const en: Dictionary = {
       subject: "Booking confirmed · {code}",
       preheader: "Your table at {restaurant} is confirmed — code {code}",
       title: "Your booking is confirmed!",
-      intro: "Hi {name}, we look forward to seeing you at {restaurant}. Keep this code handy in case you need to contact us.",
+      intro:
+        "Hi {name}, we look forward to seeing you at {restaurant}. Keep this code handy in case you need to contact us.",
       outro: "If your plans change, you can change or cancel the booking on our website.",
     },
     modified: {
@@ -608,7 +656,8 @@ const en: Dictionary = {
       preheader: "Booking {code} has been cancelled",
       title: "Booking cancelled",
       byClient: "Hi {name}, we've cancelled your booking as requested.",
-      byAdmin: "Hi {name}, we're sorry to let you know that the restaurant has cancelled your booking. If you have any questions, please contact us.",
+      byAdmin:
+        "Hi {name}, we're sorry to let you know that the restaurant has cancelled your booking. If you have any questions, please contact us.",
       outro: "We hope to see you soon at {restaurant}.",
     },
     reminder24h: {
@@ -637,7 +686,21 @@ const en: Dictionary = {
     changeLabels: { date: "date", time: "time", partySize: "guests", table: "table" },
   },
   csv: {
-    headers: ["code", "date", "time", "party_size", "status", "table", "area", "guest_name", "guest_email", "guest_phone", "notes", "internal_notes", "created_at"],
+    headers: [
+      "code",
+      "date",
+      "time",
+      "party_size",
+      "status",
+      "table",
+      "area",
+      "guest_name",
+      "guest_email",
+      "guest_phone",
+      "notes",
+      "internal_notes",
+      "created_at",
+    ],
   },
 };
 

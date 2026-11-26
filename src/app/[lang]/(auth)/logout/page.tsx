@@ -18,10 +18,12 @@ export default async function LogoutPage() {
   return (
     <Card className="p-6 text-center sm:p-8">
       <h1 className="text-h3">{t.auth.logoutTitle}</h1>
-      <p className="mt-2 mb-6 text-muted">{t.auth.logoutText}</p>
+      <p className="text-muted mt-2 mb-6">{t.auth.logoutText}</p>
       <div className="flex justify-center gap-2">
         <LogoutButton className={buttonClasses("primary")}>{t.nav.logout}</LogoutButton>
-        <ButtonLink href="/" variant="secondary">{t.common.cancel}</ButtonLink>
+        <ButtonLink href="/" variant="secondary">
+          {t.common.cancel}
+        </ButtonLink>
       </div>
     </Card>
   );

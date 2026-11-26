@@ -17,7 +17,11 @@ import { loginSchema } from "@/lib/validation";
  * ?next=). Resolving with URL catches tricks a prefix check misses, like
  * "/\\evil.com" or "/\tevil.com", which browsers treat as "//evil.com".
  */
-export function safeNext(next: string | null, fallback: string, origin = window.location.origin): string {
+export function safeNext(
+  next: string | null,
+  fallback: string,
+  origin = window.location.origin,
+): string {
   if (!next || !next.startsWith("/")) return fallback;
   try {
     const url = new URL(next, origin);
@@ -52,15 +56,32 @@ export default function LoginForm({ adminOnly = false }: { adminOnly?: boolean }
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <ErrorAlert>{error}</ErrorAlert>
-      <Input label={t.auth.email} name="email" type="email" autoComplete="email" required error={errors.email} />
-      <Input label={t.auth.password} name="password" type="password" autoComplete="current-password" required error={errors.password} />
+      <Input
+        label={t.auth.email}
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        error={errors.email}
+      />
+      <Input
+        label={t.auth.password}
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        required
+        error={errors.password}
+      />
       <Button type="submit" loading={loading} className="w-full" size="lg">
         {t.auth.submitLogin}
       </Button>
       {!adminOnly && (
-        <p className="text-center text-body-sm text-muted">
+        <p className="text-body-sm text-muted text-center">
           {t.auth.noAccount}{" "}
-          <LocaleLink href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className={linkClasses}>
+          <LocaleLink
+            href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"}
+            className={linkClasses}
+          >
             {t.auth.toRegister}
           </LocaleLink>
         </p>

@@ -10,7 +10,12 @@ const trimmed = (max: number) => z.string().trim().max(max);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "invalidTime");
 const date = z.iso.date({ error: "invalidDate" });
 // Trim/lowercase *before* validating, so pasted " Ana@Mail.com " is accepted.
-const email = z.string().trim().toLowerCase().max(254).pipe(z.email({ error: "invalidEmail" }));
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254)
+  .pipe(z.email({ error: "invalidEmail" }));
 const phone = z
   .string()
   .trim()
@@ -167,10 +172,17 @@ export const restaurantSettingsSchema = z.object({
   email: z.union([email, z.literal("").transform(() => null)]).nullish(),
   timezone: z
     .string()
-    .refine((tz) => Intl.supportedValuesOf("timeZone").includes(tz) || tz === "UTC", "invalidTimezone")
+    .refine(
+      (tz) => Intl.supportedValuesOf("timeZone").includes(tz) || tz === "UTC",
+      "invalidTimezone",
+    )
     .optional(),
   turnoverMinutes: z.coerce.number().int().min(30).max(360).optional(),
-  slotIntervalMinutes: z.coerce.number().int().refine((n) => [15, 30, 60].includes(n), "intervalValues").optional(),
+  slotIntervalMinutes: z.coerce
+    .number()
+    .int()
+    .refine((n) => [15, 30, 60].includes(n), "intervalValues")
+    .optional(),
   bookingWindowDays: z.coerce.number().int().min(1).max(365).optional(),
   maxPartySize: z.coerce.number().int().min(1).max(30).optional(),
   avgSpendPerGuest: z.coerce.number().min(0).max(10_000).optional(),
@@ -186,7 +198,10 @@ export const closedDateSchema = z.object({
 export const reportQuerySchema = z
   .object({ from: date, to: date })
   .refine((r) => r.from <= r.to, { message: "rangeOrder", path: ["to"] })
-  .refine((r) => (Date.parse(r.to) - Date.parse(r.from)) / 86_400_000 <= 366, { message: "rangeTooLong", path: ["to"] });
+  .refine((r) => (Date.parse(r.to) - Date.parse(r.from)) / 86_400_000 <= 366, {
+    message: "rangeTooLong",
+    path: ["to"],
+  });
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;

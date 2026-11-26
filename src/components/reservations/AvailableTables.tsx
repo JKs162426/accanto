@@ -21,7 +21,9 @@ export function SlotPicker({
     <div className="space-y-4">
       {shifts.map((shift) => (
         <div key={shift}>
-          <p className="mb-2 font-ui text-caption font-medium tracking-wide text-muted uppercase">{t.enums.shift[shift]}</p>
+          <p className="font-ui text-caption text-muted mb-2 font-medium tracking-wide uppercase">
+            {t.enums.shift[shift]}
+          </p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {slots
               .filter((s) => s.shift === shift)
@@ -41,12 +43,18 @@ export function SlotPicker({
                       active
                         ? "border-primary bg-primary text-on-primary"
                         : "border-line bg-surface-raised hover:border-primary/60",
-                      full && "cursor-not-allowed border-dashed bg-transparent text-muted line-through opacity-60 hover:border-line",
+                      full &&
+                        "text-muted hover:border-line cursor-not-allowed border-dashed bg-transparent line-through opacity-60",
                     )}
                   >
                     {s.time}
                     {/* "Poco disponible" (brand: terracotta) when 1–2 tables are left. */}
-                    {few && !active && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-terracotta" aria-hidden />}
+                    {few && !active && (
+                      <span
+                        className="bg-terracotta absolute top-1 right-1 size-1.5 rounded-full"
+                        aria-hidden
+                      />
+                    )}
                     <span className="sr-only">{` (${full ? t.reserve.full : fmt(few ? t.reserve.fewLeft : t.reserve.freeTables, { n: s.free })})`}</span>
                   </button>
                 );
@@ -63,10 +71,26 @@ function TableGlyph({ capacity }: { capacity: number }) {
   const seats = Math.min(capacity, 8);
   return (
     <svg viewBox="0 0 48 48" className="size-12 shrink-0" aria-hidden>
-      <rect x="14" y="14" width="20" height="20" rx={capacity <= 2 ? 10 : 4} fill="var(--beige-light)" stroke="var(--gold)" />
+      <rect
+        x="14"
+        y="14"
+        width="20"
+        height="20"
+        rx={capacity <= 2 ? 10 : 4}
+        fill="var(--beige-light)"
+        stroke="var(--gold)"
+      />
       {Array.from({ length: seats }, (_, i) => {
         const angle = (i / seats) * Math.PI * 2 - Math.PI / 2;
-        return <circle key={i} cx={24 + Math.cos(angle) * 19} cy={24 + Math.sin(angle) * 19} r="3.2" fill="var(--primary)" />;
+        return (
+          <circle
+            key={i}
+            cx={24 + Math.cos(angle) * 19}
+            cy={24 + Math.sin(angle) * 19}
+            r="3.2"
+            fill="var(--primary)"
+          />
+        );
       })}
     </svg>
   );
@@ -95,16 +119,27 @@ export default function AvailableTables({
               aria-pressed={active}
               className={cn(
                 "flex w-full items-center gap-4 rounded-lg border p-4 text-left transition-all",
-                active ? "border-2 border-primary bg-primary-soft p-[15px]" : "border-line bg-surface-raised hover:border-primary/60 hover:shadow-hover",
+                active
+                  ? "border-primary bg-primary-soft border-2 p-[15px]"
+                  : "border-line bg-surface-raised hover:border-primary/60 hover:shadow-hover",
               )}
             >
               <TableGlyph capacity={table.capacity} />
               <span className="min-w-0 flex-1">
-                <span className="block font-display text-h4 leading-tight font-semibold text-primary">{fmt(t.common.table, { n: table.number })}</span>
-                <span className="block text-body-sm text-muted">{fmt(t.reserve.upTo, { n: table.capacity })}</span>
+                <span className="font-display text-h4 text-primary block leading-tight font-semibold">
+                  {fmt(t.common.table, { n: table.number })}
+                </span>
+                <span className="text-body-sm text-muted block">
+                  {fmt(t.reserve.upTo, { n: table.capacity })}
+                </span>
                 <span className="mt-1.5 flex flex-wrap gap-1">
                   {tableTags(t, table).map((tag) => (
-                    <span key={tag} className="rounded-md bg-beige-light px-2 py-0.5 font-ui text-caption text-foreground">{tag}</span>
+                    <span
+                      key={tag}
+                      className="bg-beige-light font-ui text-caption text-foreground rounded-md px-2 py-0.5"
+                    >
+                      {tag}
+                    </span>
                   ))}
                 </span>
               </span>
@@ -115,7 +150,7 @@ export default function AvailableTables({
                 )}
                 aria-hidden
               >
-                {active && <span className="size-2 rounded-full bg-cream" />}
+                {active && <span className="bg-cream size-2 rounded-full" />}
               </span>
             </button>
           </li>

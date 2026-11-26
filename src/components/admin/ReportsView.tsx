@@ -21,10 +21,15 @@ export default function ReportsView({ report, today }: { report: Report; today: 
   const presets = [
     { label: r.presets.d7, from: addDays(today, -6), to: today },
     { label: r.presets.d30, from: addDays(today, -29), to: today },
-    { label: r.presets.month, from: monthStart, to: addDays(`${addDays(monthStart, 32).slice(0, 8)}01`, -1) },
+    {
+      label: r.presets.month,
+      from: monthStart,
+      to: addDays(`${addDays(monthStart, 32).slice(0, 8)}01`, -1),
+    },
     { label: r.presets.next30, from: today, to: addDays(today, 29) },
   ];
-  const control = "rounded-md border border-line bg-surface-raised px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none";
+  const control =
+    "rounded-md border border-line bg-surface-raised px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none";
   const money = (n: number) => formatCurrency(n, lang);
 
   return (
@@ -41,23 +46,66 @@ export default function ReportsView({ report, today }: { report: Report; today: 
             {p.label}
           </button>
         ))}
-        <span className="mx-1 hidden h-6 w-px bg-line sm:block" aria-hidden />
-        <label className="sr-only" htmlFor="from">{r.from}</label>
-        <input id="from" type="date" value={report.from} max={report.to} onChange={(e) => e.target.value && go(e.target.value, report.to)} className={control} />
+        <span className="bg-line mx-1 hidden h-6 w-px sm:block" aria-hidden />
+        <label className="sr-only" htmlFor="from">
+          {r.from}
+        </label>
+        <input
+          id="from"
+          type="date"
+          value={report.from}
+          max={report.to}
+          onChange={(e) => e.target.value && go(e.target.value, report.to)}
+          className={control}
+        />
         <span className="text-muted">→</span>
-        <label className="sr-only" htmlFor="to">{r.to}</label>
-        <input id="to" type="date" value={report.to} min={report.from} onChange={(e) => e.target.value && go(report.from, e.target.value)} className={control} />
+        <label className="sr-only" htmlFor="to">
+          {r.to}
+        </label>
+        <input
+          id="to"
+          type="date"
+          value={report.to}
+          min={report.from}
+          onChange={(e) => e.target.value && go(report.from, e.target.value)}
+          className={control}
+        />
         {/* API route (no locale prefix): the language comes from the NEXT_LOCALE cookie. */}
-        <a href={`/api/reports/export?from=${report.from}&to=${report.to}`} className={buttonClasses("secondary", "sm", "ml-auto")}>
+        <a
+          href={`/api/reports/export?from=${report.from}&to=${report.to}`}
+          className={buttonClasses("secondary", "sm", "ml-auto")}
+        >
           {r.export}
         </a>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label={r.occupancy} value={formatPercent(report.occupancy, lang)} hint={fmt(r.occupancyHint, { booked: report.bookedTurns, available: report.availableTurns })} />
-        <StatCard label={r.revenue} value={money(report.revenueEstimated)} hint={fmt(r.revenueHint, { covers: report.coversAttended, spend: money(report.avgSpendPerGuest) })} />
-        <StatCard label={r.cancellations} value={formatPercent(report.cancellationRate, lang)} hint={fmt(r.cancellationsHint, { n: report.byStatus.CANCELLED, total: report.total })} />
-        <StatCard label={r.noShows} value={formatPercent(report.noShowRate, lang)} hint={fmt(r.noShowsHint, { n: report.byStatus.NO_SHOW })} />
+        <StatCard
+          label={r.occupancy}
+          value={formatPercent(report.occupancy, lang)}
+          hint={fmt(r.occupancyHint, {
+            booked: report.bookedTurns,
+            available: report.availableTurns,
+          })}
+        />
+        <StatCard
+          label={r.revenue}
+          value={money(report.revenueEstimated)}
+          hint={fmt(r.revenueHint, {
+            covers: report.coversAttended,
+            spend: money(report.avgSpendPerGuest),
+          })}
+        />
+        <StatCard
+          label={r.cancellations}
+          value={formatPercent(report.cancellationRate, lang)}
+          hint={fmt(r.cancellationsHint, { n: report.byStatus.CANCELLED, total: report.total })}
+        />
+        <StatCard
+          label={r.noShows}
+          value={formatPercent(report.noShowRate, lang)}
+          hint={fmt(r.noShowsHint, { n: report.byStatus.NO_SHOW })}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -71,7 +119,11 @@ export default function ReportsView({ report, today }: { report: Report; today: 
           />
         </Card>
         <Card>
-          <ReportsChart title={r.byHour} description={t.admin.chart.excludesCancelled} data={report.byHour} />
+          <ReportsChart
+            title={r.byHour}
+            description={t.admin.chart.excludesCancelled}
+            data={report.byHour}
+          />
         </Card>
       </div>
 
@@ -79,26 +131,34 @@ export default function ReportsView({ report, today }: { report: Report; today: 
         <Card>
           <CardHeader title={r.frequent} description={r.frequentHint} />
           {report.frequentClients.length === 0 ? (
-            <p className="text-sm text-muted">{r.noData}</p>
+            <p className="text-muted text-sm">{r.noData}</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="text-left text-caption tracking-wide text-muted uppercase">
+              <thead className="text-caption text-muted text-left tracking-wide uppercase">
                 <tr>
                   <th className="py-2 font-medium">{r.colClient}</th>
                   <th className="py-2 text-right font-medium">{r.colReservations}</th>
                   <th className="py-2 text-right font-medium">{r.colVisits}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-line divide-y">
                 {report.frequentClients.map((c) => (
                   <tr key={c.key}>
                     <td className="py-2">
                       {c.clientId ? (
-                        <LocaleLink href={`/admin/dashboard/clients/${c.clientId}`} className="font-medium text-primary hover:underline">{c.name}</LocaleLink>
+                        <LocaleLink
+                          href={`/admin/dashboard/clients/${c.clientId}`}
+                          className="text-primary font-medium hover:underline"
+                        >
+                          {c.name}
+                        </LocaleLink>
                       ) : (
                         <span className="font-medium">{c.name}</span>
                       )}
-                      <span className="block text-caption text-muted">{c.email}{!c.clientId && r.noAccount}</span>
+                      <span className="text-caption text-muted block">
+                        {c.email}
+                        {!c.clientId && r.noAccount}
+                      </span>
                     </td>
                     <td className="py-2 text-right tabular-nums">{c.reservations}</td>
                     <td className="py-2 text-right tabular-nums">{c.visits}</td>
@@ -110,18 +170,25 @@ export default function ReportsView({ report, today }: { report: Report; today: 
         </Card>
         <Card>
           <CardHeader title={r.byStatus} />
-          <dl className="divide-y divide-line text-sm">
-            {([
-              [r.statusConfirmed, report.byStatus.CONFIRMED],
-              [r.statusAttended, report.byStatus.ATTENDED],
-              [r.statusNoShow, report.byStatus.NO_SHOW],
-              [r.statusCancelled, report.byStatus.CANCELLED],
-              [r.total, report.total],
-            ] as Array<[string, number]>).map(([label, value]) => (
-              <div key={label} className="flex justify-between py-2"><dt className="text-muted">{label}</dt><dd className="tabular-nums">{value}</dd></div>
+          <dl className="divide-line divide-y text-sm">
+            {(
+              [
+                [r.statusConfirmed, report.byStatus.CONFIRMED],
+                [r.statusAttended, report.byStatus.ATTENDED],
+                [r.statusNoShow, report.byStatus.NO_SHOW],
+                [r.statusCancelled, report.byStatus.CANCELLED],
+                [r.total, report.total],
+              ] as Array<[string, number]>
+            ).map(([label, value]) => (
+              <div key={label} className="flex justify-between py-2">
+                <dt className="text-muted">{label}</dt>
+                <dd className="tabular-nums">{value}</dd>
+              </div>
             ))}
           </dl>
-          <p className="mt-4 text-caption text-muted">{fmt(r.footnote, { projected: money(report.revenueProjected) })}</p>
+          <p className="text-caption text-muted mt-4">
+            {fmt(r.footnote, { projected: money(report.revenueProjected) })}
+          </p>
         </Card>
       </div>
     </div>

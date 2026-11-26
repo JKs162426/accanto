@@ -69,17 +69,50 @@ export default function ProfileForm({ profile }: { profile: ProfileData }) {
           {saved && <ErrorAlert tone="success">{t.profile.saved}</ErrorAlert>}
           <ErrorAlert>{save.error}</ErrorAlert>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label={t.profile.name} name="name" defaultValue={profile.name} autoComplete="name" error={errors.name} />
-            <Input label={t.profile.phone} name="phone" type="tel" defaultValue={profile.phone ?? ""} autoComplete="tel" error={errors.phone} />
-            <Input label={t.profile.email} name="email" value={profile.email} disabled hint={t.profile.emailHint} fieldClassName="sm:col-span-2" readOnly />
+            <Input
+              label={t.profile.name}
+              name="name"
+              defaultValue={profile.name}
+              autoComplete="name"
+              error={errors.name}
+            />
+            <Input
+              label={t.profile.phone}
+              name="phone"
+              type="tel"
+              defaultValue={profile.phone ?? ""}
+              autoComplete="tel"
+              error={errors.phone}
+            />
+            <Input
+              label={t.profile.email}
+              name="email"
+              value={profile.email}
+              disabled
+              hint={t.profile.emailHint}
+              fieldClassName="sm:col-span-2"
+              readOnly
+            />
           </div>
-          <fieldset className="space-y-3 border-t border-line pt-4">
+          <fieldset className="border-line space-y-3 border-t pt-4">
             <legend className="mb-2 text-sm font-medium">{t.profile.notifications}</legend>
-            <Checkbox name="remind24h" defaultChecked={profile.remind24h} label={t.profile.remind24h} description={t.profile.remind24hHint} />
-            <Checkbox name="remind2h" defaultChecked={profile.remind2h} label={t.profile.remind2h} description={t.profile.remind2hHint} />
+            <Checkbox
+              name="remind24h"
+              defaultChecked={profile.remind24h}
+              label={t.profile.remind24h}
+              description={t.profile.remind24hHint}
+            />
+            <Checkbox
+              name="remind2h"
+              defaultChecked={profile.remind2h}
+              label={t.profile.remind2h}
+              description={t.profile.remind2hHint}
+            />
             <p className="text-caption text-muted">{t.profile.alwaysSent}</p>
           </fieldset>
-          <Button type="submit" loading={save.loading}>{t.common.save}</Button>
+          <Button type="submit" loading={save.loading}>
+            {t.common.save}
+          </Button>
         </form>
       </Card>
 
@@ -89,10 +122,25 @@ export default function ProfileForm({ profile }: { profile: ProfileData }) {
           {pwSaved && <ErrorAlert tone="success">{t.profile.passwordSaved}</ErrorAlert>}
           <ErrorAlert>{changePw.error}</ErrorAlert>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label={t.profile.currentPassword} name="currentPassword" type="password" autoComplete="current-password" error={errors.currentPassword} />
-            <Input label={t.profile.newPassword} name="newPassword" type="password" autoComplete="new-password" error={errors.newPassword} hint={t.auth.passwordHint} />
+            <Input
+              label={t.profile.currentPassword}
+              name="currentPassword"
+              type="password"
+              autoComplete="current-password"
+              error={errors.currentPassword}
+            />
+            <Input
+              label={t.profile.newPassword}
+              name="newPassword"
+              type="password"
+              autoComplete="new-password"
+              error={errors.newPassword}
+              hint={t.auth.passwordHint}
+            />
           </div>
-          <Button type="submit" variant="secondary" loading={changePw.loading}>{t.profile.changePassword}</Button>
+          <Button type="submit" variant="secondary" loading={changePw.loading}>
+            {t.profile.changePassword}
+          </Button>
         </form>
       </Card>
     </div>

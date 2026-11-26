@@ -32,11 +32,16 @@ async function ClientDetail({ params, searchParams }: Pick<Props, "params" | "se
     listReservations({ clientId: id, scope: "all", page, pageSize: 10 }, admin),
   ]);
   const s = client.stats;
-  const reminders = [client.remind24h && "24 h", client.remind2h && "2 h"].filter(Boolean).join(c.and) || c.remindersOff;
+  const reminders =
+    [client.remind24h && "24 h", client.remind2h && "2 h"].filter(Boolean).join(c.and) ||
+    c.remindersOff;
 
   return (
     <>
-      <PageHeader title={client.name} description={fmt(c.since, { date: formatMonthYear(client.createdAt, lang) })} />
+      <PageHeader
+        title={client.name}
+        description={fmt(c.since, { date: formatMonthYear(client.createdAt, lang) })}
+      />
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -48,16 +53,22 @@ async function ClientDetail({ params, searchParams }: Pick<Props, "params" | "se
           <Card>
             <CardHeader title={c.history} />
             {history.items.length === 0 ? (
-              <p className="text-sm text-muted">{c.noReservations}</p>
+              <p className="text-muted text-sm">{c.noReservations}</p>
             ) : (
-              <ul className="divide-y divide-line">
+              <ul className="divide-line divide-y">
                 {history.items.map((r) => (
                   <li key={r.id}>
-                    <LocaleLink href={`/admin/dashboard/reservations/${r.id}`} className="flex items-center justify-between gap-3 py-3 text-sm hover:text-primary">
+                    <LocaleLink
+                      href={`/admin/dashboard/reservations/${r.id}`}
+                      className="hover:text-primary flex items-center justify-between gap-3 py-3 text-sm"
+                    >
                       <span>
-                        <span className="font-medium">{formatDate(fromDbDate(r.date), lang, "short")} · {r.time}</span>
-                        <span className="ml-2 text-muted">
-                          {fmt(t.common.peopleShort, { n: r.partySize })} · {fmt(t.common.table, { n: r.table.number })}
+                        <span className="font-medium">
+                          {formatDate(fromDbDate(r.date), lang, "short")} · {r.time}
+                        </span>
+                        <span className="text-muted ml-2">
+                          {fmt(t.common.peopleShort, { n: r.partySize })} ·{" "}
+                          {fmt(t.common.table, { n: r.table.number })}
                         </span>
                       </span>
                       <StatusBadge status={r.status} />
@@ -66,16 +77,36 @@ async function ClientDetail({ params, searchParams }: Pick<Props, "params" | "se
                 ))}
               </ul>
             )}
-            <Pagination t={t} page={history.page} pageSize={history.pageSize} total={history.total} basePath={`/admin/dashboard/clients/${id}`} params={{}} />
+            <Pagination
+              t={t}
+              page={history.page}
+              pageSize={history.pageSize}
+              total={history.total}
+              basePath={`/admin/dashboard/clients/${id}`}
+              params={{}}
+            />
           </Card>
         </div>
         <div className="space-y-6">
           <Card>
             <CardHeader title={c.contact} />
             <dl className="space-y-2 text-sm">
-              <div><dt className="text-muted">Email</dt><dd><a className="hover:text-primary hover:underline" href={`mailto:${client.email}`}>{client.email}</a></dd></div>
-              <div><dt className="text-muted">{c.colPhone}</dt><dd>{client.phone ?? t.common.none}</dd></div>
-              <div><dt className="text-muted">{c.reminders}</dt><dd>{reminders}</dd></div>
+              <div>
+                <dt className="text-muted">Email</dt>
+                <dd>
+                  <a className="hover:text-primary hover:underline" href={`mailto:${client.email}`}>
+                    {client.email}
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">{c.colPhone}</dt>
+                <dd>{client.phone ?? t.common.none}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">{c.reminders}</dt>
+                <dd>{reminders}</dd>
+              </div>
             </dl>
           </Card>
           <Card>
@@ -92,7 +123,12 @@ export default async function ClientPage(props: Props) {
   const { t } = await getI18n();
   return (
     <>
-      <LocaleLink href="/admin/dashboard/clients" className="mb-2 inline-block text-sm text-muted hover:text-primary">{t.admin.clients.back}</LocaleLink>
+      <LocaleLink
+        href="/admin/dashboard/clients"
+        className="text-muted hover:text-primary mb-2 inline-block text-sm"
+      >
+        {t.admin.clients.back}
+      </LocaleLink>
       <Suspense fallback={<Loading rows={3} label={t.common.loading} />}>
         <ClientDetail params={props.params} searchParams={props.searchParams} />
       </Suspense>

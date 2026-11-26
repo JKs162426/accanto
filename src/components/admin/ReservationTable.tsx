@@ -13,7 +13,8 @@ import { cn, formatDate, timeToMinutes } from "@/lib/helpers";
 import type { ReservationDTO, TableDTO } from "@/types";
 import AdminReservationForm from "./AdminReservationForm";
 
-const control = "rounded-md border border-line bg-surface-raised px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none";
+const control =
+  "rounded-md border border-line bg-surface-raised px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none";
 
 /** Filter bar: every filter lives in the URL so views are linkable. */
 function Filters() {
@@ -41,25 +42,64 @@ function Filters() {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <form onSubmit={onSearch} className="flex min-w-0 flex-1 gap-2 sm:flex-none" role="search">
-        <label htmlFor="q" className="sr-only">{a.searchLabel}</label>
-        <input id="q" name="q" defaultValue={sp.get("q") ?? ""} placeholder={a.searchPlaceholder} className={cn(control, "min-w-0 flex-1 sm:w-72")} />
-        <Button type="submit" variant="secondary">{t.common.search}</Button>
+        <label htmlFor="q" className="sr-only">
+          {a.searchLabel}
+        </label>
+        <input
+          id="q"
+          name="q"
+          defaultValue={sp.get("q") ?? ""}
+          placeholder={a.searchPlaceholder}
+          className={cn(control, "min-w-0 flex-1 sm:w-72")}
+        />
+        <Button type="submit" variant="secondary">
+          {t.common.search}
+        </Button>
       </form>
-      <label className="sr-only" htmlFor="f-date">{a.dateLabel}</label>
-      <input id="f-date" type="date" value={sp.get("date") ?? ""} onChange={(e) => apply({ date: e.target.value })} className={control} />
-      <label className="sr-only" htmlFor="f-status">{a.statusLabel}</label>
-      <select id="f-status" value={sp.get("status") ?? ""} onChange={(e) => apply({ status: e.target.value })} className={control}>
+      <label className="sr-only" htmlFor="f-date">
+        {a.dateLabel}
+      </label>
+      <input
+        id="f-date"
+        type="date"
+        value={sp.get("date") ?? ""}
+        onChange={(e) => apply({ date: e.target.value })}
+        className={control}
+      />
+      <label className="sr-only" htmlFor="f-status">
+        {a.statusLabel}
+      </label>
+      <select
+        id="f-status"
+        value={sp.get("status") ?? ""}
+        onChange={(e) => apply({ status: e.target.value })}
+        className={control}
+      >
         <option value="">{a.allStatuses}</option>
-        {Object.entries(t.enums.reservationStatus).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        {Object.entries(t.enums.reservationStatus).map(([v, l]) => (
+          <option key={v} value={v}>
+            {l}
+          </option>
+        ))}
       </select>
-      <label className="sr-only" htmlFor="f-scope">{a.scopeLabel}</label>
-      <select id="f-scope" value={sp.get("scope") ?? "upcoming"} onChange={(e) => apply({ scope: e.target.value })} className={control} disabled={Boolean(sp.get("date"))}>
+      <label className="sr-only" htmlFor="f-scope">
+        {a.scopeLabel}
+      </label>
+      <select
+        id="f-scope"
+        value={sp.get("scope") ?? "upcoming"}
+        onChange={(e) => apply({ scope: e.target.value })}
+        className={control}
+        disabled={Boolean(sp.get("date"))}
+      >
         <option value="upcoming">{a.scopeUpcoming}</option>
         <option value="past">{a.scopePast}</option>
         <option value="all">{a.scopeAll}</option>
       </select>
       {(sp.get("q") || sp.get("date") || sp.get("status")) && (
-        <Button variant="ghost" size="sm" onClick={() => router.push(pathname)}>{t.common.clear}</Button>
+        <Button variant="ghost" size="sm" onClick={() => router.push(pathname)}>
+          {t.common.clear}
+        </Button>
       )}
     </div>
   );
@@ -86,41 +126,65 @@ function DayView({
   const pct = (m: number) => `${((m - start) / span) * 100}%`;
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-card">
+    <div className="border-line bg-surface shadow-card overflow-x-auto rounded-lg border">
       <div className="min-w-[44rem] p-5">
-        <p className="mb-3 font-display text-h4 font-semibold text-primary first-letter:uppercase">{formatDate(date, lang)}</p>
-        <div className="relative ml-16 h-5 text-[11px] text-muted">
+        <p className="font-display text-h4 text-primary mb-3 font-semibold first-letter:uppercase">
+          {formatDate(date, lang)}
+        </p>
+        <div className="text-muted relative ml-16 h-5 text-[11px]">
           {hours.map((m) => (
-            <span key={m} className="absolute -translate-x-1/2" style={{ left: pct(m) }}>{String(m / 60).padStart(2, "0")}:00</span>
+            <span key={m} className="absolute -translate-x-1/2" style={{ left: pct(m) }}>
+              {String(m / 60).padStart(2, "0")}:00
+            </span>
           ))}
         </div>
         <ul className="space-y-1.5">
           {tables.map((table) => (
             <li key={table.id} className="flex items-center gap-2">
               <span className="w-14 shrink-0 text-sm">
-                <span className="font-semibold text-primary">{fmt(t.common.tableShort, { n: table.number })}</span>{" "}
+                <span className="text-primary font-semibold">
+                  {fmt(t.common.tableShort, { n: table.number })}
+                </span>{" "}
                 <span className="text-caption text-muted">·{table.capacity}</span>
               </span>
-              <div className="relative h-9 flex-1 rounded-md bg-surface-raised">
-                {hours.map((m) => <span key={m} className="absolute inset-y-0 w-px bg-grid" style={{ left: pct(m) }} aria-hidden />)}
-                {reservations.filter((r) => r.table.id === table.id).map((r) => {
-                  const s = timeToMinutes(r.time);
-                  const dur = (new Date(r.endsAt).getTime() - new Date(r.startsAt).getTime()) / 60000;
-                  return (
-                    <LocaleLink
-                      key={r.id}
-                      href={`/admin/dashboard/reservations/${r.id}`}
-                      title={`${r.time} · ${r.guestName} (${r.partySize}) · ${t.enums.reservationStatus[r.status]}`}
-                      className={cn(
-                        "absolute inset-y-0.5 flex items-center overflow-hidden rounded-md border-x-2 border-surface px-2 text-caption whitespace-nowrap",
-                        r.status === "ATTENDED" ? "bg-info-soft text-info" : r.status === "NO_SHOW" ? "bg-warning-soft text-warning" : "bg-success-soft text-success",
-                      )}
-                      style={{ left: pct(s), width: `${(Math.min(dur, start + span - s) / span) * 100}%` }}
-                    >
-                      <span className="font-semibold">{r.time}</span>&nbsp;{r.guestName.split(" ")[0]} ({r.partySize})
-                    </LocaleLink>
-                  );
-                })}
+              <div className="bg-surface-raised relative h-9 flex-1 rounded-md">
+                {hours.map((m) => (
+                  <span
+                    key={m}
+                    className="bg-grid absolute inset-y-0 w-px"
+                    style={{ left: pct(m) }}
+                    aria-hidden
+                  />
+                ))}
+                {reservations
+                  .filter((r) => r.table.id === table.id)
+                  .map((r) => {
+                    const s = timeToMinutes(r.time);
+                    const dur =
+                      (new Date(r.endsAt).getTime() - new Date(r.startsAt).getTime()) / 60000;
+                    return (
+                      <LocaleLink
+                        key={r.id}
+                        href={`/admin/dashboard/reservations/${r.id}`}
+                        title={`${r.time} · ${r.guestName} (${r.partySize}) · ${t.enums.reservationStatus[r.status]}`}
+                        className={cn(
+                          "border-surface text-caption absolute inset-y-0.5 flex items-center overflow-hidden rounded-md border-x-2 px-2 whitespace-nowrap",
+                          r.status === "ATTENDED"
+                            ? "bg-info-soft text-info"
+                            : r.status === "NO_SHOW"
+                              ? "bg-warning-soft text-warning"
+                              : "bg-success-soft text-success",
+                        )}
+                        style={{
+                          left: pct(s),
+                          width: `${(Math.min(dur, start + span - s) / span) * 100}%`,
+                        }}
+                      >
+                        <span className="font-semibold">{r.time}</span>&nbsp;
+                        {r.guestName.split(" ")[0]} ({r.partySize})
+                      </LocaleLink>
+                    );
+                  })}
               </div>
             </li>
           ))}
@@ -139,7 +203,12 @@ export default function ReservationTable({
 }: {
   reservations: ReservationDTO[];
   view: "table" | "day";
-  day: { date: string; reservations: ReservationDTO[]; tables: Pick<TableDTO, "id" | "number" | "capacity">[]; range: { start: string; end: string } | null } | null;
+  day: {
+    date: string;
+    reservations: ReservationDTO[];
+    tables: Pick<TableDTO, "id" | "number" | "capacity">[];
+    range: { start: string; end: string } | null;
+  } | null;
   defaultDate: string;
   openNew: boolean;
 }) {
@@ -182,9 +251,9 @@ export default function ReservationTable({
       ) : reservations.length === 0 ? (
         <EmptyState title={a.empty} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-card">
+        <div className="border-line bg-surface shadow-card overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[46rem] text-sm">
-            <thead className="border-b border-line bg-beige-light text-left text-caption tracking-wide text-muted uppercase">
+            <thead className="border-line bg-beige-light text-caption text-muted border-b text-left tracking-wide uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">{a.colDate}</th>
                 <th className="px-4 py-3 font-medium">{a.colClient}</th>
@@ -194,23 +263,33 @@ export default function ReservationTable({
                 <th className="px-4 py-3 font-medium">{a.colStatus}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-line divide-y">
               {reservations.map((r) => (
-                <tr key={r.id} className="cursor-pointer bg-surface-raised hover:bg-primary-soft/50" onClick={() => router.push(href(`/admin/dashboard/reservations/${r.id}`))}>
+                <tr
+                  key={r.id}
+                  className="bg-surface-raised hover:bg-primary-soft/50 cursor-pointer"
+                  onClick={() => router.push(href(`/admin/dashboard/reservations/${r.id}`))}
+                >
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <LocaleLink href={`/admin/dashboard/reservations/${r.id}`} className="font-medium text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                    <LocaleLink
+                      href={`/admin/dashboard/reservations/${r.id}`}
+                      className="text-primary font-medium hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {formatDate(r.date, lang, "short")}
                     </LocaleLink>
-                    <span className="ml-2 text-muted tabular-nums">{r.time}</span>
+                    <span className="text-muted ml-2 tabular-nums">{r.time}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="block font-medium">{r.guestName}</span>
-                    <span className="block text-caption text-muted">{r.guestEmail}</span>
+                    <span className="text-caption text-muted block">{r.guestEmail}</span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">{r.partySize}</td>
                   <td className="px-4 py-3">{r.table.number}</td>
-                  <td className="px-4 py-3 font-mono text-caption">{r.code}</td>
-                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                  <td className="text-caption px-4 py-3 font-mono">{r.code}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={r.status} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -218,7 +297,12 @@ export default function ReservationTable({
         </div>
       )}
 
-      <Modal open={creating} onClose={() => setCreating(false)} title={t.admin.newReservation} size="lg">
+      <Modal
+        open={creating}
+        onClose={() => setCreating(false)}
+        title={t.admin.newReservation}
+        size="lg"
+      >
         <AdminReservationForm
           defaultDate={sp.get("date") ?? defaultDate}
           onCreated={(r) => {

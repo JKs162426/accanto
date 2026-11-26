@@ -15,13 +15,24 @@ import type { Prisma, Reservation, Table } from "@/generated/prisma/client";
 import type { ReservationStatus } from "@/generated/prisma/enums";
 import type { Paginated, ReservationDTO, SessionUser } from "@/types";
 import { assertBookableSlot, freeTablesFor, getBusyIntervals } from "./availabilityService";
-import { enqueueReservationEmails, type ReservationChanges, type ReservationEmailEvent } from "./emailService";
-import { getRestaurant, toSchedulingConfig, type RestaurantWithSchedule } from "./restaurantService";
+import {
+  enqueueReservationEmails,
+  type ReservationChanges,
+  type ReservationEmailEvent,
+} from "./emailService";
+import {
+  getRestaurant,
+  toSchedulingConfig,
+  type RestaurantWithSchedule,
+} from "./restaurantService";
 
 type Tx = Prisma.TransactionClient;
 type ReservationWithTable = Reservation & { table: Table };
 
-export function toReservationDTO(r: ReservationWithTable, viewer?: Pick<SessionUser, "role">): ReservationDTO {
+export function toReservationDTO(
+  r: ReservationWithTable,
+  viewer?: Pick<SessionUser, "role">,
+): ReservationDTO {
   return {
     id: r.id,
     code: r.code,
@@ -62,7 +73,11 @@ const TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 };
  * reassignment. Locks are released automatically at commit/rollback, and are
  * taken in sorted order so two multi-day updates can't deadlock.
  */
-async function withBookingLock<T>(restaurantId: string, dates: string[], fn: (tx: Tx) => Promise<T>): Promise<T> {
+async function withBookingLock<T>(
+  restaurantId: string,
+  dates: string[],
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
   return db.$transaction(async (tx) => {
     await lockBookingDays(tx, restaurantId, dates);
     return fn(tx);
@@ -117,7 +132,11 @@ async function assertTableFree(
     throw new AppError(422, "TABLE_TOO_SMALL", { number: table.number, capacity: table.capacity });
   }
   const busy = await getBusyIntervals(tx, restaurant.id, startsAt, endsAt, excludeReservationId);
-  if (busy.some((b) => b.tableId === tableId && intervalsOverlap(b.startsAt, b.endsAt, startsAt, endsAt))) {
+  if (
+    busy.some(
+      (b) => b.tableId === tableId && intervalsOverlap(b.startsAt, b.endsAt, startsAt, endsAt),
+    )
+  ) {
     throw new AppError(409, "TABLE_TAKEN");
   }
   return table;
@@ -131,7 +150,14 @@ async function notifyAdmins(
   const admins = await tx.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
   // Structured `data` lets the panel render the notification in the admin's
   // current language; subject/content are a plain-text fallback.
-  const data = { code: r.code, guestName: r.guestName, date: fromDbDate(r.date), time: r.time, partySize: r.partySize, table: r.table.number };
+  const data = {
+    code: r.code,
+    guestName: r.guestName,
+    date: fromDbDate(r.date),
+    time: r.time,
+    partySize: r.partySize,
+    table: r.table.number,
+  };
   await tx.notification.createMany({
     data: admins.map((a) => ({
       userId: a.id,
@@ -164,7 +190,10 @@ export async function createReservation(
   let clientId: string | null = actor.id;
   if (isAdmin) {
     clientId = ("clientId" in input && input.clientId) || null;
-    if (clientId && !(await db.user.findUnique({ where: { id: clientId }, select: { id: true } }))) {
+    if (
+      clientId &&
+      !(await db.user.findUnique({ where: { id: clientId }, select: { id: true } }))
+    ) {
       throw notFound("CLIENT_NOT_FOUND");
     }
     // Phone bookings for someone who already has an account show up in their history.
@@ -190,7 +219,11 @@ export async function createReservation(
   // our emails to arbitrary addresses. Admins (phone bookings) set it freely.
   const guestEmail = isAdmin ? input.guestEmail : actor.email;
 
-  const { startsAt, endsAt } = reservationInterval(input.date, input.time, toSchedulingConfig(restaurant));
+  const { startsAt, endsAt } = reservationInterval(
+    input.date,
+    input.time,
+    toSchedulingConfig(restaurant),
+  );
 
   return withBookingLock(restaurant.id, [input.date], async (tx) => {
     await assertTableFree(tx, restaurant, input.tableId, input.partySize, startsAt, endsAt);
@@ -219,7 +252,12 @@ export async function createReservation(
         reservationId: reservation.id,
         actorId: actor.id,
         action: "CREATED",
-        changes: { date: input.date, time: input.time, partySize: input.partySize, table: reservation.table.number },
+        changes: {
+          date: input.date,
+          time: input.time,
+          partySize: input.partySize,
+          table: reservation.table.number,
+        },
       },
     });
     await enqueueReservationEmails(tx, reservation, restaurant, { kind: "created" });
@@ -313,7 +351,10 @@ export async function listReservations(
 
 // ─── Update ────────────────────────────────────────────────────────────
 
-function describeChanges(before: ReservationWithTable, after: ReservationWithTable): Record<string, { from: unknown; to: unknown }> {
+function describeChanges(
+  before: ReservationWithTable,
+  after: ReservationWithTable,
+): Record<string, { from: unknown; to: unknown }> {
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   const pairs: Array<[string, unknown, unknown]> = [
     ["date", fromDbDate(before.date), fromDbDate(after.date)],
@@ -361,7 +402,10 @@ export async function updateReservation(
     const partySize = input.partySize ?? before.partySize;
     const requestedTable = "tableId" in input ? input.tableId : undefined;
     const slotChanged = date !== fromDbDate(before.date) || time !== before.time;
-    const seatingChanged = slotChanged || partySize !== before.partySize || (requestedTable && requestedTable !== before.tableId);
+    const seatingChanged =
+      slotChanged ||
+      partySize !== before.partySize ||
+      (requestedTable && requestedTable !== before.tableId);
 
     if (slotChanged) assertBookableSlot(restaurant, date, time);
     if (partySize > restaurant.maxPartySize && !isAdmin) {
@@ -380,9 +424,10 @@ export async function updateReservation(
         // A client can't pick tables when modifying: if their table no longer
         // works, move them to the best free table, preferring the same area.
         if (isAdmin || requestedTable || !(error instanceof AppError)) throw error;
-        const { tables } = await freeTablesFor(tx, restaurant, date, time, partySize, { excludeReservationId: id });
-        const replacement =
-          tables.find((t) => t.location === before.table.location) ?? tables[0];
+        const { tables } = await freeTablesFor(tx, restaurant, date, time, partySize, {
+          excludeReservationId: id,
+        });
+        const replacement = tables.find((t) => t.location === before.table.location) ?? tables[0];
         if (!replacement) {
           throw new AppError(409, "NO_AVAILABILITY");
         }
@@ -421,7 +466,9 @@ export async function updateReservation(
       },
     });
     const visible = Object.fromEntries(
-      Object.entries(changes).filter(([k]) => (GUEST_VISIBLE_FIELDS as readonly string[]).includes(k)),
+      Object.entries(changes).filter(([k]) =>
+        (GUEST_VISIBLE_FIELDS as readonly string[]).includes(k),
+      ),
     ) as ReservationChanges;
     // Guests are emailed only about changes that affect their visit.
     if (Object.keys(visible).length > 0 && updated.status === "CONFIRMED") {
@@ -435,7 +482,10 @@ export async function updateReservation(
 
 // ─── Cancel ────────────────────────────────────────────────────────────
 
-export async function cancelReservation(id: string, actor: SessionUser): Promise<ReservationWithTable> {
+export async function cancelReservation(
+  id: string,
+  actor: SessionUser,
+): Promise<ReservationWithTable> {
   const isAdmin = actor.role === "ADMIN";
   await loadForActor(id, actor); // 404 for missing or foreign ids, before any lock
   const restaurant = await getRestaurant();
@@ -454,9 +504,17 @@ export async function cancelReservation(id: string, actor: SessionUser): Promise
       include: { table: true },
     });
     await tx.reservationHistory.create({
-      data: { reservationId: id, actorId: actor.id, action: "CANCELLED", changes: { by: actor.role } },
+      data: {
+        reservationId: id,
+        actorId: actor.id,
+        action: "CANCELLED",
+        changes: { by: actor.role },
+      },
     });
-    await enqueueReservationEmails(tx, updated, restaurant, { kind: "cancelled", byAdmin: isAdmin });
+    await enqueueReservationEmails(tx, updated, restaurant, {
+      kind: "cancelled",
+      byAdmin: isAdmin,
+    });
     if (!isAdmin) await notifyAdmins(tx, "RESERVATION_CANCELLED", updated);
     return updated;
   });

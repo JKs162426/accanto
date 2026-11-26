@@ -17,7 +17,13 @@ import type { ReservationDTO } from "@/types";
  * One reservation. Cancelling flips the badge immediately (useOptimistic);
  * if the API refuses, React drops the optimistic state and we show why.
  */
-export default function ReservationCard({ reservation, editable }: { reservation: ReservationDTO; editable: boolean }) {
+export default function ReservationCard({
+  reservation,
+  editable,
+}: {
+  reservation: ReservationDTO;
+  editable: boolean;
+}) {
   const { cancel } = useReservations();
   const { t, lang } = useI18n();
   const [status, setOptimisticStatus] = useOptimistic(reservation.status);
@@ -42,23 +48,26 @@ export default function ReservationCard({ reservation, editable }: { reservation
   const canAct = editable && status === "CONFIRMED";
 
   return (
-    <article className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4 shadow-card transition-shadow hover:shadow-hover sm:flex-row sm:items-center sm:p-6">
-      <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-lg border border-gold bg-surface-raised text-primary">
+    <article className="border-line bg-surface shadow-card hover:shadow-hover flex flex-col gap-4 rounded-lg border p-4 transition-shadow sm:flex-row sm:items-center sm:p-6">
+      <div className="border-gold bg-surface-raised text-primary flex size-16 shrink-0 flex-col items-center justify-center rounded-lg border">
         <span className="font-display text-3xl leading-none font-bold">{Number(day)}</span>
-        <span className="font-ui text-caption tracking-wide text-accent-text uppercase">
+        <span className="font-ui text-caption text-accent-text tracking-wide uppercase">
           {formatMonthShort(Number(month), lang)}
         </span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-h4 leading-tight first-letter:uppercase">{formatDate(reservation.date, lang)}</h3>
+          <h3 className="text-h4 leading-tight first-letter:uppercase">
+            {formatDate(reservation.date, lang)}
+          </h3>
           <StatusBadge status={status} />
         </div>
-        <p className="mt-0.5 text-foreground">
-          {reservation.time} · {plural(reservation.partySize, t.common.people)} · {fmt(t.common.table, { n: reservation.table.number })} (
+        <p className="text-foreground mt-0.5">
+          {reservation.time} · {plural(reservation.partySize, t.common.people)} ·{" "}
+          {fmt(t.common.table, { n: reservation.table.number })} (
           {tableTags(t, reservation.table).join(", ")})
         </p>
-        <p className="mt-1 font-mono text-caption tracking-wider text-muted">{reservation.code}</p>
+        <p className="text-caption text-muted mt-1 font-mono tracking-wider">{reservation.code}</p>
         {error && <ErrorAlert className="mt-2">{error}</ErrorAlert>}
       </div>
       <div className="flex gap-2 sm:flex-col sm:items-stretch">
@@ -74,7 +83,11 @@ export default function ReservationCard({ reservation, editable }: { reservation
           </Button>
         )}
       </div>
-      <Modal open={confirming} onClose={() => setConfirming(false)} title={t.myReservations.cancelTitle}>
+      <Modal
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        title={t.myReservations.cancelTitle}
+      >
         <p className="text-muted">
           {fmt(t.myReservations.cancelText, {
             table: reservation.table.number,
@@ -83,8 +96,12 @@ export default function ReservationCard({ reservation, editable }: { reservation
           })}
         </p>
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setConfirming(false)}>{t.myReservations.keep}</Button>
-          <Button variant="danger" onClick={onCancel}>{t.myReservations.confirmCancel}</Button>
+          <Button variant="secondary" onClick={() => setConfirming(false)}>
+            {t.myReservations.keep}
+          </Button>
+          <Button variant="danger" onClick={onCancel}>
+            {t.myReservations.confirmCancel}
+          </Button>
         </div>
       </Modal>
     </article>

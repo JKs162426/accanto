@@ -17,7 +17,12 @@ export function useZodForm() {
     <S extends z.ZodType>(schema: S, input: unknown): z.infer<S> | null => {
       const parsed = schema.safeParse(input);
       if (!parsed.success) {
-        setClientErrors(translateFieldErrors(t, z.flattenError(parsed.error).fieldErrors as Record<string, string[]>));
+        setClientErrors(
+          translateFieldErrors(
+            t,
+            z.flattenError(parsed.error).fieldErrors as Record<string, string[]>,
+          ),
+        );
         return null;
       }
       setClientErrors({});

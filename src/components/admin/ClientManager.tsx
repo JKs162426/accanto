@@ -11,7 +11,6 @@ import { useAsync } from "@/hooks/useAsync";
 import { apiFetch } from "@/lib/apiClient";
 import { useI18n } from "@/i18n/client";
 
-
 export interface ClientRow {
   id: string;
   name: string;
@@ -23,7 +22,13 @@ export interface ClientRow {
 }
 
 const shortDate = (iso: string | null, locale: string) =>
-  iso ? new Intl.DateTimeFormat(locale === "it" ? "it-IT" : "en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso)) : "—";
+  iso
+    ? new Intl.DateTimeFormat(locale === "it" ? "it-IT" : "en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(iso))
+    : "—";
 
 /** Searchable client list (search lives in ?q= so it paginates server-side). */
 export default function ClientManager({ clients }: { clients: ClientRow[] }) {
@@ -44,16 +49,26 @@ export default function ClientManager({ clients }: { clients: ClientRow[] }) {
           router.push(q ? `${pathname}?q=${encodeURIComponent(q)}` : pathname);
         }}
       >
-        <label htmlFor="client-q" className="sr-only">{c.searchLabel}</label>
-        <input id="client-q" name="q" defaultValue={sp.get("q") ?? ""} placeholder={c.searchPlaceholder} className="min-w-0 flex-1 rounded-md border border-line bg-surface-raised px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" />
-        <Button type="submit" variant="secondary">{t.common.search}</Button>
+        <label htmlFor="client-q" className="sr-only">
+          {c.searchLabel}
+        </label>
+        <input
+          id="client-q"
+          name="q"
+          defaultValue={sp.get("q") ?? ""}
+          placeholder={c.searchPlaceholder}
+          className="border-line bg-surface-raised focus:border-primary focus:ring-primary min-w-0 flex-1 rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+        />
+        <Button type="submit" variant="secondary">
+          {t.common.search}
+        </Button>
       </form>
       {clients.length === 0 ? (
         <EmptyState title={c.empty} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-card">
+        <div className="border-line bg-surface shadow-card overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[40rem] text-sm">
-            <thead className="border-b border-line bg-beige-light text-left text-caption tracking-wide text-muted uppercase">
+            <thead className="border-line bg-beige-light text-caption text-muted border-b text-left tracking-wide uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">{c.colClient}</th>
                 <th className="px-4 py-3 font-medium">{c.colPhone}</th>
@@ -62,12 +77,17 @@ export default function ClientManager({ clients }: { clients: ClientRow[] }) {
                 <th className="px-4 py-3 font-medium">{c.colSince}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-line divide-y">
               {clients.map((client) => (
                 <tr key={client.id} className="bg-surface-raised hover:bg-primary-soft/50">
                   <td className="px-4 py-3">
-                    <LocaleLink href={`/admin/dashboard/clients/${client.id}`} className="font-medium text-primary hover:underline">{client.name}</LocaleLink>
-                    <span className="block text-caption text-muted">{client.email}</span>
+                    <LocaleLink
+                      href={`/admin/dashboard/clients/${client.id}`}
+                      className="text-primary font-medium hover:underline"
+                    >
+                      {client.name}
+                    </LocaleLink>
+                    <span className="text-caption text-muted block">{client.email}</span>
                   </td>
                   <td className="px-4 py-3">{client.phone ?? t.common.none}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{client.totalReservations}</td>
@@ -90,7 +110,10 @@ export function ClientNotes({ clientId, initial }: { clientId: string; initial: 
   const c = t.admin.clients;
   const [saved, setSaved] = useState(false);
   const save = useAsync(async (adminNotes: string) => {
-    await apiFetch(`/api/users/${clientId}`, { method: "PATCH", body: { adminNotes: adminNotes || null } });
+    await apiFetch(`/api/users/${clientId}`, {
+      method: "PATCH",
+      body: { adminNotes: adminNotes || null },
+    });
     setSaved(true);
     router.refresh();
   });
@@ -105,8 +128,17 @@ export function ClientNotes({ clientId, initial }: { clientId: string; initial: 
     >
       {saved && <ErrorAlert tone="success">{c.notesSaved}</ErrorAlert>}
       <ErrorAlert>{save.error}</ErrorAlert>
-      <Textarea label={c.notesLabel} name="adminNotes" rows={4} defaultValue={initial ?? ""} maxLength={2000} placeholder={c.notesPlaceholder} />
-      <Button type="submit" size="sm" variant="secondary" loading={save.loading}>{t.common.save}</Button>
+      <Textarea
+        label={c.notesLabel}
+        name="adminNotes"
+        rows={4}
+        defaultValue={initial ?? ""}
+        maxLength={2000}
+        placeholder={c.notesPlaceholder}
+      />
+      <Button type="submit" size="sm" variant="secondary" loading={save.loading}>
+        {t.common.save}
+      </Button>
     </form>
   );
 }

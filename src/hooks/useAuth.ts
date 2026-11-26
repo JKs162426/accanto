@@ -8,9 +8,13 @@ import type { SessionUser } from "@/types";
 /** Current user on the client (cached by SWR, shared across components). */
 export function useAuth() {
   const router = useRouter();
-  const { data, isLoading, mutate } = useSWR<{ user: SessionUser | null }>("/api/auth/me", swrFetcher, {
-    revalidateOnFocus: false,
-  });
+  const { data, isLoading, mutate } = useSWR<{ user: SessionUser | null }>(
+    "/api/auth/me",
+    swrFetcher,
+    {
+      revalidateOnFocus: false,
+    },
+  );
 
   async function login(email: string, password: string, adminOnly = false) {
     const res = await apiFetch<{ user: SessionUser }>("/api/auth/login", {
@@ -21,8 +25,16 @@ export function useAuth() {
     return res.user;
   }
 
-  async function register(input: { name: string; email: string; phone?: string; password: string }) {
-    const res = await apiFetch<{ user: SessionUser }>("/api/auth/register", { method: "POST", body: input });
+  async function register(input: {
+    name: string;
+    email: string;
+    phone?: string;
+    password: string;
+  }) {
+    const res = await apiFetch<{ user: SessionUser }>("/api/auth/register", {
+      method: "POST",
+      body: input,
+    });
     await mutate({ user: res.user }, { revalidate: false });
     return res.user;
   }

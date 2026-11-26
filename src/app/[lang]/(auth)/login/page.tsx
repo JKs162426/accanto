@@ -16,12 +16,12 @@ export default async function LoginPage() {
   return (
     <Card className="p-6 sm:p-8">
       <h1 className="text-h3 font-semibold">{t.auth.loginTitle}</h1>
-      <p className="mt-1 mb-6 text-muted">{t.auth.loginLead}</p>
+      <p className="text-muted mt-1 mb-6">{t.auth.loginLead}</p>
       <Suspense fallback={<Skeleton className="h-64" />}>
         <LoginForm />
       </Suspense>
       {SHOW_DEMO_CREDENTIALS && (
-        <p className="mt-6 rounded-md bg-surface-raised px-4 py-3 font-ui text-caption text-muted">
+        <p className="bg-surface-raised font-ui text-caption text-muted mt-6 rounded-md px-4 py-3">
           {t.auth.demo} <code>client1@accanto.local</code> / <code>ClientPass123!</code>
         </p>
       )}

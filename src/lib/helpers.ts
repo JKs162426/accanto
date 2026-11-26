@@ -135,7 +135,9 @@ export function formatDateTime(instant: Date | string, timeZone: string, locale:
 }
 
 export function formatMonthYear(instant: Date | string, locale: string): string {
-  return new Intl.DateTimeFormat(intl(locale), { month: "long", year: "numeric" }).format(new Date(instant));
+  return new Intl.DateTimeFormat(intl(locale), { month: "long", year: "numeric" }).format(
+    new Date(instant),
+  );
 }
 
 export function formatCurrency(amount: number, locale: string): string {
@@ -143,12 +145,20 @@ export function formatCurrency(amount: number, locale: string): string {
 }
 
 export function formatPercent(ratio: number, locale: string): string {
-  return new Intl.NumberFormat(intl(locale), { style: "percent", maximumFractionDigits: 0 }).format(ratio);
+  return new Intl.NumberFormat(intl(locale), { style: "percent", maximumFractionDigits: 0 }).format(
+    ratio,
+  );
 }
 
 /** Human tags for a table: area, category and window, e.g. ["Interno", "VIP", "Finestra"]. */
 export function tableTags(
-  t: { enums: { location: Record<TableLocation, string>; tableType: Record<TableType, string>; window: string } },
+  t: {
+    enums: {
+      location: Record<TableLocation, string>;
+      tableType: Record<TableType, string>;
+      window: string;
+    };
+  },
   table: { location: TableLocation; type: TableType; isWindow: boolean },
 ): string[] {
   const tags: string[] = [t.enums.location[table.location]];
@@ -185,7 +195,11 @@ export function csvCell(value: unknown): string {
 }
 
 /** `columns` are row keys; `headers` (same order) are the labels written to the first line. */
-export function toCsv(rows: Array<Record<string, unknown>>, columns: string[], headers: string[] = columns): string {
+export function toCsv(
+  rows: Array<Record<string, unknown>>,
+  columns: string[],
+  headers: string[] = columns,
+): string {
   const lines = [headers.map(csvCell).join(",")];
   for (const row of rows) lines.push(columns.map((c) => csvCell(row[c])).join(","));
   return lines.join("\r\n");

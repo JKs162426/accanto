@@ -64,4 +64,4 @@ export async function apiFetch<T>(
 }
 
 /** SWR fetcher. */
-export const swrFetcher = <T,>(url: string) => apiFetch<T>(url);
+export const swrFetcher = <T>(url: string) => apiFetch<T>(url);

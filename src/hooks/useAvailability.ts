@@ -20,12 +20,19 @@ export interface AvailabilityParams {
 export function useAvailability(params: AvailabilityParams | null) {
   const key = params?.date
     ? `/api/reservations/availability?${new URLSearchParams(
-        Object.entries(params).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => [k, String(v)]),
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined && v !== "")
+          .map(([k, v]) => [k, String(v)]),
       )}`
     : null;
   const { data, error, isLoading, mutate } = useSWR<AvailabilityDTO>(key, swrFetcher, {
     refreshInterval: params?.time ? 30_000 : 0,
     keepPreviousData: true,
   });
-  return { availability: data, error: error as Error | undefined, loading: isLoading, refresh: mutate };
+  return {
+    availability: data,
+    error: error as Error | undefined,
+    loading: isLoading,
+    refresh: mutate,
+  };
 }

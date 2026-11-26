@@ -38,8 +38,22 @@ export default function RegisterForm() {
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <ErrorAlert>{error}</ErrorAlert>
       <Input label={t.auth.name} name="name" autoComplete="name" required error={errors.name} />
-      <Input label={t.auth.email} name="email" type="email" autoComplete="email" required error={errors.email} />
-      <Input label={t.auth.phoneOptional} name="phone" type="tel" autoComplete="tel" error={errors.phone} hint={t.auth.phoneHint} />
+      <Input
+        label={t.auth.email}
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        error={errors.email}
+      />
+      <Input
+        label={t.auth.phoneOptional}
+        name="phone"
+        type="tel"
+        autoComplete="tel"
+        error={errors.phone}
+        hint={t.auth.phoneHint}
+      />
       <Input
         label={t.auth.password}
         name="password"
@@ -52,9 +66,12 @@ export default function RegisterForm() {
       <Button type="submit" loading={loading} className="w-full" size="lg">
         {t.auth.submitRegister}
       </Button>
-      <p className="text-center text-body-sm text-muted">
+      <p className="text-body-sm text-muted text-center">
         {t.auth.haveAccount}{" "}
-        <LocaleLink href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className={linkClasses}>
+        <LocaleLink
+          href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+          className={linkClasses}
+        >
           {t.auth.toLogin}
         </LocaleLink>
       </p>

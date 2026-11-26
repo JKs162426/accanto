@@ -12,12 +12,16 @@ export const GET = handle(async (request) => {
   const ip = clientIp(request);
   if (ip) {
     const limit = rateLimit(`availability:${ip}`, AVAILABILITY_PER_MINUTE, 60_000);
-    if (!limit.ok) return jsonError(request, 429, "RATE_LIMITED", { seconds: limit.retryAfterSeconds });
+    if (!limit.ok)
+      return jsonError(request, 429, "RATE_LIMITED", { seconds: limit.retryAfterSeconds });
   }
   const query = parseQuery(request, availabilityQuerySchema);
   const { notice, ...availability } = await getAvailability(query);
   const body: AvailabilityDTO = notice
-    ? { ...availability, message: translateError(getDictionary(requestLocale(request)), notice.code, notice.params) }
+    ? {
+        ...availability,
+        message: translateError(getDictionary(requestLocale(request)), notice.code, notice.params),
+      }
     : availability;
   return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
 });
